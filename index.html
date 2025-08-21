@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Astrox | Content Creator & Tools</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --text: #e0e0ff;
+      --accent: #8a4eff;
+      --accent-glow: rgba(138, 78, 255, 0.25);
+      --text-secondary: #a0a0c0;
+      --border: #2a2a40;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      flex: 1;
+    }
+
+    header {
+      text-align: center;
+      padding: 4rem 0 3rem;
+    }
+
+    .logo {
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #8a4eff, #b388ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .tagline {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 20px var(--accent-glow);
+      text-decoration: none;
+      display: inline-block;
+      margin: 0.5rem;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+      z-index: -1;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 300px;
+      text-align: center;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-10px) scale(1.03);
+      border-color: var(--accent);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+      transition: 0.3s ease;
+    }
+
+    .feature-card:hover .feature-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .feature-title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: white;
+    }
+
+    .feature-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .cta {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: linear-gradient(to bottom, var(--bg), #141420);
+      border-top: 1px solid var(--border);
+    }
+
+    .cta h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #8a4eff, #b388ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 3s infinite linear;
+      background-size: 1000px;
+    }
+
+    @keyframes shine {
+      0% { background-position: -500px; }
+      100% { background-position: 500px; }
+    }
+
+    .cta p {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .socials {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .social-link {
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .social-link::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      bottom: -5px;
+      left: 0;
+      background: var(--accent);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+      transform-origin: center;
+    }
+
+    .social-link:hover {
+      color: var(--accent);
+    }
+
+    .social-link:hover::after {
+      transform: scaleX(1);
+    }
+
+    @media (max-width: 768px) {
+      .logo {
+        font-size: 2.8rem;
+      }
+      .hero {
+        padding: 0 1rem;
+      }
+      .feature-card {
+        width: 100%;
+      }
+      .cta h2 {
+        font-size: 2rem;
+      }
+    }
+
+    /* Floating particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .particle {
+      position: absolute;
+      background: var(--accent-glow);
+      border-radius: 50%;
+      opacity: 0.2;
+      filter: blur(1px);
+    }
+
+    .particle:nth-child(1) {
+      width: 100px;
+      height: 100px;
+      top: 20%;
+      left: 10%;
+      animation: float 15s infinite ease-in-out;
+    }
+
+    .particle:nth-child(2) {
+      width: 80px;
+      height: 80px;
+      top: 70%;
+      left: 20%;
+      animation: float 18s infinite ease-in-out reverse;
+    }
+
+    .particle:nth-child(3) {
+      width: 120px;
+      height: 120px;
+      top: 30%;
+      right: 15%;
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .particle:nth-child(4) {
+      width: 60px;
+      height: 60px;
+      bottom: 20%;
+      right: 10%;
+      animation: float 16s infinite ease-in-out reverse;
+    }
+  </style>
+</head>
+<body>
+  <!-- Particles -->
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div class="logo">Astrox</div>
+      <div class="tagline">Content Creator & Developer</div>
+    </header>
+
+    <section class="hero">
+      <p>Hey, I'm Astrox – a small content creator with big ideas. 
+         I share my passion for gaming, tech, and creativity on YouTube 
+         and build cool tools for the community.</p>
+      
+      <div class="socials">
+        <a href="https://www.youtube.com/@astrox-m2c" target="_blank" class="social-link">▶️ YouTube</a>
+        <a href="https://discord.com/invite/qqktg5Ztvn" target="_blank" class="social-link">💬 Discord</a>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3 class="feature-title">AstroxSight</h3>
+        <p class="feature-desc">A free, futuristic crosshair tool for shooters. 
+           No overlay, no performance loss – just precision.</p>
+        <button class="btn btn-outline">Coming Soon</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎥</div>
+        <h3 class="feature-title">YouTube</h3>
+        <p class="feature-desc">Daily clips, highlights, and creative projects. 
+           Gaming with style and a touch of humor.</p>
+        <a href="https://www.youtube.com/@astrox-m2c" target="_blank" class="btn btn-outline">Subscribe</a>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3 class="feature-title">Community</h3>
+        <p class="feature-desc">Connect with others, join giveaways, 
+           and be there when we go live.</p>
+        <a href="https://discord.com/invite/qqktg5Ztvn" target="_blank" class="btn btn-outline">Join</a>
+      </div>
+    </section>
+  </div>
+
+  <section class="cta">
+    <h2>Stay Tuned</h2>
+    <p>AstroxSight is coming soon – clean, fast, and free. 
+       Follow me on YouTube or Discord to not miss anything.</p>
+    <a href="https://discord.com/invite/qqktg5Ztvn" target="_blank" class="btn">Join Discord</a>
+  </section>
+
+  <footer>
+    <p>© 2025 Astrox | Designed with ♡ for the community</p>
+  </footer>
+
+  <script>
+    // Add subtle parallax to feature cards
+    document.addEventListener('mousemove', (e) => {
+      const features = document.querySelectorAll('.feature-card');
+      const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+      const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+
+      features.forEach(feature => {
+        feature.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+      });
+    });
+
+    // Reset transform on mouse leave
+    document.addEventListener('mouseleave', () => {
+      const features = document.querySelectorAll('.feature-card');
+      features.forEach(feature => {
+        feature.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      });
+    });
+
+    // Animate buttons on hover with glow
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        btn.style.boxShadow = '0 0 30px var(--accent-glow)';
+      });
+
+      btn.addEventListener('mouseleave', () => {
+        btn.style.boxShadow = '0 0 20px var(--accent-glow)';
+      });
+    });
+  </script>
+</body>
+</html>
