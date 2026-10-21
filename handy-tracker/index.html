@@ -239,8 +239,8 @@
 <script>
 // ---------- Supabase-Zugang (siehe handy-tracker/SETUP.md) ----------
 // Beide Werte stehen in Supabase unter Project Settings → API. Der „anon public“-Schlüssel darf öffentlich sein.
-const SUPABASE_URL = "";
-const SUPABASE_ANON_KEY = "";
+const SUPABASE_URL = "https://yokzttcobitpflfzebto.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_gBxUXznjm3dV-2sekXvEeg_gNEufTbk";
 const SHOP_EMAIL = "laden@example.com"; // gemeinsamer Laden-Zugang, in Supabase unter Authentication → Users angelegt
 
 const DONE = "An Kunde ausgegeben";
@@ -291,7 +291,7 @@ const store = {
     try {
       await new Promise((ok, fail) => {
         const sc = document.createElement("script");
-        sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+        sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js";
         sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc);
       });
     } catch (e) { toast("Keine Internetverbindung – bitte Seite neu laden."); return; }
