@@ -109,6 +109,8 @@
     box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
   .toast.show { opacity: 1; transform: translateX(-50%); }
   footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
+  .login { position: fixed; inset: 0; background: rgba(7,15,29,.72); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; z-index: 10; }
+  .login .card { width: 100%; max-width: 360px; }
   .mt { margin-top: 16px; }
   .hidden { display: none !important; }
   @media (max-width: 560px) {
@@ -217,12 +219,30 @@
       <div class="tag-list" id="empTags"></div>
       <form class="row" id="addEmp"><input name="v" placeholder="Name" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
     </div>
+    <div class="row mt hidden" id="logoutRow"><button class="ghost small" id="logoutBtn">Auf diesem Gerät abmelden</button></div>
   </section>
   <footer>Connect-Experts · Mobilfunk &amp; Reparatur · Interner Handy-Tracker</footer>
 </div>
 <div class="toast" id="toast"></div>
 
+<div class="login hidden" id="login">
+  <form class="card" id="loginForm">
+    <div class="mark" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h2>Anmelden</h2>
+    <p class="hint" style="margin:0 0 14px">Bitte das Laden-Passwort eingeben. Danach bleibst du auf diesem Gerät angemeldet.</p>
+    <div class="field"><label>Passwort</label><input type="password" id="loginPw" autocomplete="current-password" required></div>
+    <button style="width:100%">Anmelden</button>
+    <p class="hint" id="loginErr" style="color:var(--danger);margin:10px 0 0"></p>
+  </form>
+</div>
+
 <script>
+// ---------- Supabase-Zugang (siehe handy-tracker/SETUP.md) ----------
+// Beide Werte stehen in Supabase unter Project Settings → API. Der „anon public“-Schlüssel darf öffentlich sein.
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+const SHOP_EMAIL = "laden@example.com"; // gemeinsamer Laden-Zugang, in Supabase unter Authentication → Users angelegt
+
 const DONE = "An Kunde ausgegeben";
 const DEFAULT_SETTINGS = { locations: ["Freilassing", "Globus", "Bad Reichenhall", "Techniker", DONE], employees: [] };
 
@@ -244,12 +264,15 @@ function toast(msg) {
 // ---------- Speicher: geteilte Datenbank, sonst lokal im Browser ----------
 const store = {
   shared: false,
+  mode: "local",
   db: null,
+  sb: null,
   async init() {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) return this.initSupabase();
     try {
       const db = window.claude?.use ? await window.claude.use("db") : null;
       if (db) {
-        this.db = db; this.shared = true;
+        this.db = db; this.shared = true; this.mode = "claude";
         db.collection("devices").onSnapshot((snap) => {
           devices = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
           render();
@@ -262,6 +285,49 @@ const store = {
       }
     } catch (e) { /* fallback */ }
     this.loadLocal();
+  },
+  async initSupabase() {
+    this.mode = "supabase"; this.shared = true;
+    try {
+      await new Promise((ok, fail) => {
+        const sc = document.createElement("script");
+        sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+        sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc);
+      });
+    } catch (e) { toast("Keine Internetverbindung – bitte Seite neu laden."); return; }
+    this.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true } });
+    $("#logoutRow").classList.remove("hidden");
+    const { data } = await this.sb.auth.getSession();
+    if (data.session) this.startSupabase(); else $("#login").classList.remove("hidden");
+  },
+  async login(password) {
+    const { error } = await this.sb.auth.signInWithPassword({ email: SHOP_EMAIL, password });
+    if (error) throw error;
+    $("#login").classList.add("hidden");
+    this.startSupabase();
+  },
+  async startSupabase() {
+    await this.reload();
+    this.sb.channel("tracker")
+      .on("postgres_changes", { event: "*", schema: "public", table: "devices" }, () => this.reload())
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => this.reload())
+      .subscribe();
+    // Fallback, falls Realtime unterbrochen ist
+    setInterval(() => document.visibilityState === "visible" && this.reload(), 30000);
+  },
+  async reload() {
+    const [dv, st] = await Promise.all([
+      this.sb.from("devices").select("id,data"),
+      this.sb.from("settings").select("data").eq("id", "main").maybeSingle(),
+    ]);
+    if (dv.error || st.error) {
+      if ([dv.error, st.error].some((e) => e && /JWT|auth/i.test(e.message))) $("#login").classList.remove("hidden");
+      else toast("Laden fehlgeschlagen – bitte Seite neu laden.");
+      return;
+    }
+    devices = dv.data.map((r) => ({ id: r.id, ...r.data }));
+    settings = st.data ? { ...DEFAULT_SETTINGS, ...st.data.data } : { ...DEFAULT_SETTINGS };
+    render();
   },
   loadLocal() {
     try {
@@ -278,7 +344,11 @@ const store = {
   },
   async saveDevice(dev) {
     const { id, ...body } = dev;
-    if (this.shared) {
+    if (this.mode === "supabase") {
+      const { error } = await this.sb.from("devices").upsert({ id, data: body, updated_at: new Date().toISOString() });
+      if (error) { toast("Speichern fehlgeschlagen."); throw error; }
+      await this.reload();
+    } else if (this.shared) {
       try { await this.db.doc("devices/" + id).set(body); }
       catch (e) { toast(e.code === "invalid_argument" ? "Keine Schreibrechte." : "Speichern fehlgeschlagen."); throw e; }
     } else {
@@ -288,12 +358,19 @@ const store = {
     }
   },
   async deleteDevice(id) {
-    if (this.shared) await this.db.doc("devices/" + id).delete();
+    if (this.mode === "supabase") {
+      const { error } = await this.sb.from("devices").delete().eq("id", id);
+      if (error) toast("Löschen fehlgeschlagen.");
+      await this.reload();
+    } else if (this.shared) await this.db.doc("devices/" + id).delete();
     else { devices = devices.filter((d) => d.id !== id); this.saveLocal(); render(); }
   },
   async saveSettings(next) {
     settings = next;
-    if (this.shared) {
+    if (this.mode === "supabase") {
+      const { error } = await this.sb.from("settings").upsert({ id: "main", data: next });
+      if (error) toast("Speichern fehlgeschlagen.");
+    } else if (this.shared) {
       try { await this.db.doc("settings/main").set(next); } catch (e) { toast("Speichern fehlgeschlagen."); }
     } else { this.saveLocal(); }
     render();
@@ -460,10 +537,21 @@ $("#exportCsv").addEventListener("click", async () => {
   const csv = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
   const filename = `handy-tracker-${new Date().toISOString().slice(0, 10)}.csv`;
   const blob = new Blob([String.fromCharCode(0xFEFF) + csv], { type: "text/csv;charset=utf-8" });
-  const downloads = store.shared ? await window.claude.use("downloads").catch(() => null) : null;
+  const downloads = store.mode === "claude" ? await window.claude.use("downloads").catch(() => null) : null;
   if (downloads) { downloads.save({ filename, data: blob }).catch(() => {}); return; }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+});
+
+$("#loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("#loginErr").textContent = "";
+  try { await store.login($("#loginPw").value); $("#loginPw").value = ""; }
+  catch (err) { $("#loginErr").textContent = "Passwort falsch oder keine Verbindung."; }
+});
+$("#logoutBtn").addEventListener("click", async () => {
+  if (!confirm("Auf diesem Gerät abmelden?")) return;
+  await store.sb.auth.signOut(); location.reload();
 });
 
 render();
