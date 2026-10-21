@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect-Experts Handy-Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  /* Markenfarben – hier anpassen */
+  :root {
+    --brand: #0b63ce; --brand-2: #00b3e3; --brand-ink: #ffffff; --brand-dark: #0a1a33;
+    --bg: #f2f5f9; --card: #ffffff; --text: #0f1b2d; --muted: #5d6b80; --border: #e1e7ef;
+    --soft: #e8f1fd; --danger: #d23b3b; --ok: #12a150; --warn: #c27c0e;
+    --shadow: 0 1px 2px rgba(15,27,45,.05), 0 4px 16px rgba(15,27,45,.06);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --brand: #3d8bff; --brand-2: #22c4f0; --brand-ink: #06101f; --brand-dark: #070f1d;
+      --bg: #0b111b; --card: #121a27; --text: #e6ecf5; --muted: #8e9bb0; --border: #223047;
+      --soft: #15274a; --danger: #ff6b6b; --ok: #3ddc84; --warn: #f5b942; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --brand: #3d8bff; --brand-2: #22c4f0; --brand-ink: #06101f; --brand-dark: #070f1d;
+    --bg: #0b111b; --card: #121a27; --text: #e6ecf5; --muted: #8e9bb0; --border: #223047;
+    --soft: #15274a; --danger: #ff6b6b; --ok: #3ddc84; --warn: #f5b942; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  .topbar { background: linear-gradient(120deg, var(--brand-dark) 0%, #0d2a57 55%, var(--brand) 100%); color: #fff; }
+  .topbar .inner { max-width: 1000px; margin: 0 auto; padding: 18px 16px 64px; }
+  .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand img { height: 40px; width: auto; display: block; }
+  .mark { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; flex: none;
+    background: linear-gradient(135deg, var(--brand-2), #3d8bff); box-shadow: 0 4px 14px rgba(0,179,227,.35); }
+  .mark svg { width: 22px; height: 22px; }
+  .wordmark { font-weight: 800; font-size: 19px; letter-spacing: -.01em; line-height: 1.1; }
+  .wordmark span { color: var(--brand-2); }
+  .sub { font-size: 12px; opacity: .75; letter-spacing: .08em; text-transform: uppercase; }
+  .status { font-size: 12.5px; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.12); white-space: nowrap; }
+  .status i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; margin-right: 6px; }
+  .status.local i { background: #f5b942; }
+  .hero { margin-top: 22px; }
+  .hero h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .hero p { margin: 4px 0 0; opacity: .8; font-size: 14px; }
+  .wrap { max-width: 1000px; margin: -44px auto 0; padding: 0 16px 40px; }
+  nav { display: flex; gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); margin-bottom: 16px; width: fit-content; max-width: 100%; overflow-x: auto; }
+  nav button { background: transparent; border: none; color: var(--muted); font-weight: 600; padding: 8px 14px; white-space: nowrap; }
+  nav button.active { background: var(--brand); color: #fff; }
+  h2 { font-size: 16px; font-weight: 700; margin: 0 0 14px; }
+  button { font: inherit; font-weight: 600; border-radius: 10px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--brand);
+    background: var(--brand); color: #fff; transition: filter .15s, transform .05s; }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(1px); }
+  button.ghost { background: var(--card); color: var(--text); border-color: var(--border); }
+  button.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+  button.small { padding: 5px 11px; font-size: 13px; }
+  input, select, textarea { font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--soft); }
+  textarea { resize: vertical; min-height: 70px; }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .field { margin-bottom: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .toolbar { margin-bottom: 14px; }
+  .search { position: relative; flex: 1; min-width: 200px; }
+  .search input { padding-left: 36px; }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); }
+  .check { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text); font-weight: 500; font-size: 14px; }
+  .check input { width: auto; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; box-shadow: var(--shadow); font-weight: 500; }
+  .stat .n { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
+  .stat .l { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .stat.active { border-color: var(--brand); box-shadow: 0 0 0 3px var(--soft); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c, var(--brand)); }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; cursor: pointer;
+    border-left: 4px solid var(--c, var(--brand)); transition: transform .1s, border-color .15s; }
+  .item:hover { transform: translateY(-1px); }
+  .item .title { font-weight: 700; }
+  .item .meta { font-size: 13px; color: var(--muted); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font-size: 12.5px; font-weight: 600;
+    background: color-mix(in srgb, var(--c, var(--brand)) 14%, transparent); color: var(--text); white-space: nowrap; }
+  .badge.done { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .dhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dhead h2 { margin: 0; font-size: 20px; }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { position: relative; padding: 0 0 16px 22px; border-left: 2px solid var(--border); margin-left: 5px; }
+  .timeline li:last-child { border-left-color: transparent; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--card); border: 3px solid var(--brand); }
+  .timeline .when { font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 40px 16px; }
+  .empty svg { width: 44px; height: 44px; color: var(--brand); opacity: .5; display: block; margin: 0 auto 8px; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 14px; }
+  .tag button { padding: 0 7px; border-radius: 999px; background: transparent; color: var(--muted); border: none; font-size: 16px; line-height: 1.2; }
+  .hint { color: var(--muted); font-size: 13px; margin: -6px 0 12px; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--brand-dark); color: #fff;
+    padding: 11px 18px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
+  .login { position: fixed; inset: 0; background: rgba(7,15,29,.72); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; z-index: 10; }
+  .login .card { width: 100%; max-width: 360px; }
+  .mt { margin-top: 16px; }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) {
+    .item { flex-direction: column; align-items: flex-start; }
+    .hero h1 { font-size: 22px; }
+    nav { width: 100%; }
+    nav button { flex: 1; padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <div class="brandrow">
+    <div class="brand">
+      <img id="logo" src="logo.png" alt="Connect-Experts" onerror="this.remove(); document.getElementById('fallbackMark').classList.remove('hidden')">
+      <div id="fallbackMark" class="row hidden" style="gap:12px">
+        <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></div>
+        <div><div class="wordmark">Connect<span>-Experts</span></div><div class="sub">Mobilfunk &amp; Reparatur</div></div>
+      </div>
+    </div>
+    <div class="status" id="status">Lade …</div>
+  </div>
+  <div class="hero">
+    <h1>Handy-Tracker</h1>
+    <p>Wo ist welches Gerät? Filialen, Techniker &amp; Kunde – mit vollständigem Verlauf.</p>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <nav>
+    <button data-tab="list" class="active">Übersicht</button>
+    <button data-tab="new">+ Neues Handy</button>
+    <button data-tab="settings">Einstellungen</button>
+  </nav>
+
+  <!-- Übersicht -->
+  <section id="tab-list">
+    <div class="stats" id="locChips"></div>
+    <div class="row toolbar">
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" placeholder="Suchen: Modell, IMEI, Kunde, Auftragsnr. …"></div>
+      <label class="check"><input type="checkbox" id="showDone"> Abgeschlossene zeigen</label>
+      <button class="ghost small" id="exportCsv">CSV-Export</button>
+    </div>
+    <div class="list" id="deviceList"></div>
+  </section>
+
+  <!-- Detail -->
+  <section id="tab-detail" class="hidden">
+    <button class="ghost small" id="backBtn">← Zurück</button>
+    <div class="card mt">
+      <div class="dhead">
+        <h2 id="dTitle"></h2>
+        <span class="badge" id="dLoc"></span>
+      </div>
+      <div class="grid mt" id="dInfo"></div>
+    </div>
+
+    <div class="card mt" id="moveCard">
+      <h2>Handy weitergeben</h2>
+      <div class="grid">
+        <div class="field"><label>Neuer Standort</label><select id="mTo"></select></div>
+        <div class="field"><label>Mitarbeiter</label><select id="mEmp"></select></div>
+      </div>
+      <div class="field"><label>Notiz (optional)</label><input id="mNote" placeholder="z. B. Display-Tausch, Paket-Nr. …"></div>
+      <button id="moveBtn">Bewegung eintragen</button>
+    </div>
+
+    <div class="card mt">
+      <h2>Verlauf</h2>
+      <ul class="timeline" id="dHistory"></ul>
+    </div>
+
+    <div class="row mt">
+      <button class="danger small" id="deleteBtn">Handy löschen</button>
+    </div>
+  </section>
+
+  <!-- Neues Handy -->
+  <section id="tab-new" class="hidden">
+    <form class="card" id="newForm">
+      <h2>Neues Handy erfassen</h2>
+      <div class="grid">
+        <div class="field"><label>Modell *</label><input name="model" required placeholder="z. B. iPhone 14 Pro"></div>
+        <div class="field"><label>IMEI / Seriennummer</label><input name="imei"></div>
+        <div class="field"><label>Auftragsnummer</label><input name="order"></div>
+        <div class="field"><label>Kunde</label><input name="customer" placeholder="Name / Telefon"></div>
+        <div class="field"><label>Aktueller Standort *</label><select name="location" id="nLoc" required></select></div>
+        <div class="field"><label>Mitarbeiter *</label><select name="employee" id="nEmp" required></select></div>
+      </div>
+      <div class="field"><label>Fehler / Notiz</label><textarea name="note" placeholder="z. B. Akku tauschen, Displaybruch …"></textarea></div>
+      <button type="submit">Speichern</button>
+    </form>
+  </section>
+
+  <!-- Einstellungen -->
+  <section id="tab-settings" class="hidden">
+    <div class="card">
+      <h2>Standorte</h2>
+      <p class="hint">Filialen, Techniker, Lager … „An Kunde ausgegeben“ gilt als abgeschlossen.</p>
+      <div class="tag-list" id="locTags"></div>
+      <form class="row" id="addLoc"><input name="v" placeholder="Neuer Standort" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
+    </div>
+    <div class="card mt">
+      <h2>Mitarbeiter</h2>
+      <div class="tag-list" id="empTags"></div>
+      <form class="row" id="addEmp"><input name="v" placeholder="Name" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
+    </div>
+    <div class="row mt hidden" id="logoutRow"><button class="ghost small" id="logoutBtn">Auf diesem Gerät abmelden</button></div>
+  </section>
+  <footer>Connect-Experts · Mobilfunk &amp; Reparatur · Interner Handy-Tracker</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="login hidden" id="login">
+  <form class="card" id="loginForm">
+    <div class="mark" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h2>Anmelden</h2>
+    <p class="hint" style="margin:0 0 14px">Bitte das Laden-Passwort eingeben. Danach bleibst du auf diesem Gerät angemeldet.</p>
+    <div class="field"><label>Passwort</label><input type="password" id="loginPw" autocomplete="current-password" required></div>
+    <button style="width:100%">Anmelden</button>
+    <p class="hint" id="loginErr" style="color:var(--danger);margin:10px 0 0"></p>
+  </form>
+</div>
+
+<script>
+// ---------- Supabase-Zugang (siehe handy-tracker/SETUP.md) ----------
+// Beide Werte stehen in Supabase unter Project Settings → API. Der „anon public“-Schlüssel darf öffentlich sein.
+const SUPABASE_URL = "https://yokzttcobitpflfzebto.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_gBxUXznjm3dV-2sekXvEeg_gNEufTbk";
+const SHOP_EMAIL = "laden@example.com"; // gemeinsamer Laden-Zugang, in Supabase unter Authentication → Users angelegt
+
+const DONE = "An Kunde ausgegeben";
+const DEFAULT_SETTINGS = { locations: ["Freilassing", "Globus", "Bad Reichenhall", "Techniker", DONE], employees: [] };
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (ts) => new Date(ts).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+let devices = [];
+let settings = { ...DEFAULT_SETTINGS };
+let filterLoc = null;
+let currentId = null;
+
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ---------- Speicher: geteilte Datenbank, sonst lokal im Browser ----------
+const store = {
+  shared: false,
+  mode: "local",
+  db: null,
+  sb: null,
+  async init() {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) return this.initSupabase();
+    try {
+      const db = window.claude?.use ? await window.claude.use("db") : null;
+      if (db) {
+        this.db = db; this.shared = true; this.mode = "claude";
+        db.collection("devices").onSnapshot((snap) => {
+          devices = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          render();
+        }, () => toast("Verbindung zur Datenbank verloren – bitte Seite neu laden."));
+        db.doc("settings/main").onSnapshot((snap) => {
+          settings = snap.exists ? { ...DEFAULT_SETTINGS, ...snap.data() } : { ...DEFAULT_SETTINGS };
+          render();
+        });
+        return;
+      }
+    } catch (e) { /* fallback */ }
+    this.loadLocal();
+  },
+  async initSupabase() {
+    this.mode = "supabase"; this.shared = true;
+    try {
+      await new Promise((ok, fail) => {
+        const sc = document.createElement("script");
+        sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js";
+        sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc);
+      });
+    } catch (e) { toast("Keine Internetverbindung – bitte Seite neu laden."); return; }
+    this.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true } });
+    $("#logoutRow").classList.remove("hidden");
+    const { data } = await this.sb.auth.getSession();
+    if (data.session) this.startSupabase(); else $("#login").classList.remove("hidden");
+  },
+  async login(password) {
+    const { error } = await this.sb.auth.signInWithPassword({ email: SHOP_EMAIL, password });
+    if (error) throw error;
+    $("#login").classList.add("hidden");
+    this.startSupabase();
+  },
+  async startSupabase() {
+    await this.reload();
+    this.sb.channel("tracker")
+      .on("postgres_changes", { event: "*", schema: "public", table: "devices" }, () => this.reload())
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => this.reload())
+      .subscribe();
+    // Fallback, falls Realtime unterbrochen ist
+    setInterval(() => document.visibilityState === "visible" && this.reload(), 30000);
+  },
+  async reload() {
+    const [dv, st] = await Promise.all([
+      this.sb.from("devices").select("id,data"),
+      this.sb.from("settings").select("data").eq("id", "main").maybeSingle(),
+    ]);
+    if (dv.error || st.error) {
+      if ([dv.error, st.error].some((e) => e && /JWT|auth/i.test(e.message))) $("#login").classList.remove("hidden");
+      else toast("Laden fehlgeschlagen – bitte Seite neu laden.");
+      return;
+    }
+    devices = dv.data.map((r) => ({ id: r.id, ...r.data }));
+    settings = st.data ? { ...DEFAULT_SETTINGS, ...st.data.data } : { ...DEFAULT_SETTINGS };
+    render();
+  },
+  loadLocal() {
+    try {
+      devices = JSON.parse(localStorage.getItem("ht_devices") || "[]");
+      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem("ht_settings") || "{}") };
+    } catch (e) { devices = []; }
+    render();
+  },
+  saveLocal() {
+    try {
+      localStorage.setItem("ht_devices", JSON.stringify(devices));
+      localStorage.setItem("ht_settings", JSON.stringify(settings));
+    } catch (e) { toast("Speichern im Browser nicht möglich."); }
+  },
+  async saveDevice(dev) {
+    const { id, ...body } = dev;
+    if (this.mode === "supabase") {
+      const { error } = await this.sb.from("devices").upsert({ id, data: body, updated_at: new Date().toISOString() });
+      if (error) { toast("Speichern fehlgeschlagen."); throw error; }
+      await this.reload();
+    } else if (this.shared) {
+      try { await this.db.doc("devices/" + id).set(body); }
+      catch (e) { toast(e.code === "invalid_argument" ? "Keine Schreibrechte." : "Speichern fehlgeschlagen."); throw e; }
+    } else {
+      const i = devices.findIndex((d) => d.id === id);
+      if (i >= 0) devices[i] = dev; else devices.push(dev);
+      this.saveLocal(); render();
+    }
+  },
+  async deleteDevice(id) {
+    if (this.mode === "supabase") {
+      const { error } = await this.sb.from("devices").delete().eq("id", id);
+      if (error) toast("Löschen fehlgeschlagen.");
+      await this.reload();
+    } else if (this.shared) await this.db.doc("devices/" + id).delete();
+    else { devices = devices.filter((d) => d.id !== id); this.saveLocal(); render(); }
+  },
+  async saveSettings(next) {
+    settings = next;
+    if (this.mode === "supabase") {
+      const { error } = await this.sb.from("settings").upsert({ id: "main", data: next });
+      if (error) toast("Speichern fehlgeschlagen.");
+    } else if (this.shared) {
+      try { await this.db.doc("settings/main").set(next); } catch (e) { toast("Speichern fehlgeschlagen."); }
+    } else { this.saveLocal(); }
+    render();
+  },
+};
+
+// ---------- Ansicht ----------
+function showTab(name) {
+  for (const t of ["list", "new", "settings", "detail"]) $("#tab-" + t).classList.toggle("hidden", t !== name);
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name || (name === "detail" && b.dataset.tab === "list")));
+  if (name !== "detail") currentId = null;
+  window.scrollTo(0, 0);
+}
+
+function options(list, selected, placeholder) {
+  return (placeholder ? `<option value="">${esc(placeholder)}</option>` : "") +
+    list.map((v) => `<option ${v === selected ? "selected" : ""}>${esc(v)}</option>`).join("");
+}
+
+const PALETTE = ["#0b63ce", "#00a3cc", "#7c4dff", "#e8590c", "#12a150", "#d6336c", "#c27c0e", "#0ca678"];
+function locColor(l) {
+  if (l === DONE) return "#8e9bb0";
+  const i = settings.locations.indexOf(l);
+  return PALETTE[(i >= 0 ? i : [...l].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length];
+}
+
+function render() {
+  $("#status").className = "status" + (store.shared ? "" : " local");
+  $("#status").innerHTML = store.shared ? `<i></i>Live – für alle Filialen` : `<i></i>Nur dieses Gerät`;
+  $("#status").title = store.shared ? "Alle Mitarbeiter sehen dieselben Daten" : "Daten liegen nur in diesem Browser";
+
+  // Formulare
+  const nLoc = $("#nLoc").value, nEmp = $("#nEmp").value;
+  $("#nLoc").innerHTML = options(settings.locations.filter((l) => l !== DONE), nLoc, "Bitte wählen");
+  $("#nEmp").innerHTML = options(settings.employees, nEmp, settings.employees.length ? "Bitte wählen" : "Erst unter Einstellungen anlegen");
+
+  // Einstellungen
+  $("#locTags").innerHTML = settings.locations.map((l, i) =>
+    `<span class="tag" style="--c:${locColor(l)}"><span class="dot"></span>${esc(l)}${l === DONE ? "" : `<button title="Entfernen" data-del-loc="${i}">×</button>`}</span>`).join("");
+  $("#empTags").innerHTML = settings.employees.map((e, i) =>
+    `<span class="tag">${esc(e)}<button title="Entfernen" data-del-emp="${i}">×</button></span>`).join("") ||
+    `<span class="hint">Noch keine Mitarbeiter eingetragen.</span>`;
+
+  renderList();
+  if (currentId) renderDetail();
+}
+
+function renderList() {
+  const showDone = $("#showDone").checked;
+  const q = $("#search").value.trim().toLowerCase();
+  const active = devices.filter((d) => showDone || d.location !== DONE);
+
+  const counts = {};
+  active.forEach((d) => counts[d.location] = (counts[d.location] || 0) + 1);
+  const locs = [...new Set([...settings.locations, ...Object.keys(counts)])].filter((l) => showDone || l !== DONE);
+  $("#locChips").innerHTML =
+    `<button class="stat ${filterLoc ? "" : "active"}" data-loc=""><span class="n">${active.length}</span><span class="l">Alle Geräte</span></button>` +
+    locs.map((l) => `<button class="stat ${filterLoc === l ? "active" : ""}" data-loc="${esc(l)}" style="--c:${locColor(l)}"><span class="n">${counts[l] || 0}</span><span class="l"><span class="dot"></span>${esc(l)}</span></button>`).join("");
+
+  const list = active
+    .filter((d) => !filterLoc || d.location === filterLoc)
+    .filter((d) => !q || [d.model, d.imei, d.customer, d.order, d.note].some((v) => String(v || "").toLowerCase().includes(q)))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+
+  $("#deviceList").innerHTML = list.length ? list.map((d) => {
+    const last = d.history[d.history.length - 1];
+    return `<div class="card item" data-id="${esc(d.id)}" style="--c:${locColor(d.location)}">
+      <div>
+        <div class="title">${esc(d.model)}${d.order ? ` <span class="meta">#${esc(d.order)}</span>` : ""}</div>
+        <div class="meta">${[d.imei && "IMEI " + esc(d.imei), d.customer && esc(d.customer)].filter(Boolean).join(" · ") || "&nbsp;"}</div>
+        <div class="meta">Zuletzt: ${esc(last.employee)} · ${fmt(last.ts)}</div>
+      </div>
+      <span class="badge ${d.location === DONE ? "done" : ""}"><span class="dot"></span>${esc(d.location)}</span>
+    </div>`;
+  }).join("") : `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>${devices.length ? "Keine Treffer." : "Noch keine Handys erfasst. Lege oben mit „+ Neues Handy“ das erste an."}</div>`;
+}
+
+function renderDetail() {
+  const d = devices.find((x) => x.id === currentId);
+  if (!d) { showTab("list"); return; }
+  $("#dTitle").textContent = d.model;
+  $("#dLoc").innerHTML = `<span class="dot"></span>${esc(d.location)}`;
+  $("#dLoc").className = "badge" + (d.location === DONE ? " done" : "");
+  $("#dLoc").style.setProperty("--c", locColor(d.location));
+  const info = [["IMEI / Seriennr.", d.imei], ["Auftragsnr.", d.order], ["Kunde", d.customer], ["Erfasst", fmt(d.createdAt)], ["Fehler / Notiz", d.note]];
+  $("#dInfo").innerHTML = info.filter(([, v]) => v).map(([k, v]) => `<div><label>${k}</label>${esc(v)}</div>`).join("");
+
+  const to = $("#mTo").value, emp = $("#mEmp").value;
+  $("#mTo").innerHTML = options(settings.locations.filter((l) => l !== d.location), to, "Bitte wählen");
+  $("#mEmp").innerHTML = options(settings.employees, emp, settings.employees.length ? "Bitte wählen" : "Erst unter Einstellungen anlegen");
+
+  $("#dHistory").innerHTML = [...d.history].reverse().map((h) => `<li>
+    <div><b>${h.from ? `${esc(h.from)} → ` : "Erfasst in "}${esc(h.to)}</b></div>
+    <div>${esc(h.employee)}${h.note ? " – " + esc(h.note) : ""}</div>
+    <div class="when">${fmt(h.ts)}</div></li>`).join("");
+}
+
+// ---------- Aktionen ----------
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+$("#backBtn").addEventListener("click", () => showTab("list"));
+$("#search").addEventListener("input", renderList);
+$("#showDone").addEventListener("change", renderList);
+$("#locChips").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-loc]"); if (!c) return;
+  filterLoc = c.dataset.loc || null; renderList();
+});
+$("#deviceList").addEventListener("click", (e) => {
+  const it = e.target.closest("[data-id]"); if (!it) return;
+  currentId = it.dataset.id; $("#mNote").value = ""; showTab("detail"); renderDetail();
+});
+
+$("#newForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  if (!f.employee) { toast("Bitte Mitarbeiter wählen (ggf. unter Einstellungen anlegen)."); return; }
+  const now = Date.now();
+  const dev = {
+    id: uid(), model: f.model.trim(), imei: f.imei.trim(), order: f.order.trim(), customer: f.customer.trim(),
+    note: f.note.trim(), location: f.location, createdAt: now, updatedAt: now,
+    history: [{ ts: now, from: null, to: f.location, employee: f.employee, note: "" }],
+  };
+  try { await store.saveDevice(dev); } catch (err) { return; }
+  e.target.reset(); render(); toast("Handy gespeichert."); showTab("list");
+});
+
+$("#moveBtn").addEventListener("click", async () => {
+  const d = devices.find((x) => x.id === currentId); if (!d) return;
+  const to = $("#mTo").value, emp = $("#mEmp").value, note = $("#mNote").value.trim();
+  if (!to || !emp) { toast("Bitte Standort und Mitarbeiter wählen."); return; }
+  const now = Date.now();
+  const next = { ...d, location: to, updatedAt: now, history: [...d.history, { ts: now, from: d.location, to, employee: emp, note }] };
+  try { await store.saveDevice(next); } catch (err) { return; }
+  $("#mNote").value = ""; $("#mTo").value = ""; toast(`Eingetragen: ${d.location} → ${to}`);
+});
+
+$("#deleteBtn").addEventListener("click", async () => {
+  const d = devices.find((x) => x.id === currentId); if (!d) return;
+  if (!confirm(`„${d.model}“ wirklich löschen? Der Verlauf geht verloren.`)) return;
+  await store.deleteDevice(d.id); showTab("list"); toast("Gelöscht.");
+});
+
+function addTo(key, formSel) {
+  $(formSel).addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = e.target.v.value.trim(); if (!v) return;
+    if (settings[key].includes(v)) { toast("Gibt es schon."); return; }
+    const list = [...settings[key]];
+    if (key === "locations") list.splice(Math.max(0, list.indexOf(DONE)), 0, v); else list.push(v);
+    store.saveSettings({ ...settings, [key]: list }); e.target.reset();
+  });
+}
+addTo("locations", "#addLoc");
+addTo("employees", "#addEmp");
+document.addEventListener("click", (e) => {
+  const l = e.target.dataset.delLoc, m = e.target.dataset.delEmp;
+  if (l !== undefined) store.saveSettings({ ...settings, locations: settings.locations.filter((_, i) => i !== +l) });
+  if (m !== undefined) store.saveSettings({ ...settings, employees: settings.employees.filter((_, i) => i !== +m) });
+});
+
+$("#exportCsv").addEventListener("click", async () => {
+  const rows = [["Modell", "IMEI", "Auftragsnr.", "Kunde", "Standort", "Zeitpunkt", "Von", "Nach", "Mitarbeiter", "Notiz"]];
+  devices.forEach((d) => d.history.forEach((h) =>
+    rows.push([d.model, d.imei, d.order, d.customer, d.location, fmt(h.ts), h.from || "", h.to, h.employee, h.note])));
+  const csv = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const filename = `handy-tracker-${new Date().toISOString().slice(0, 10)}.csv`;
+  const blob = new Blob([String.fromCharCode(0xFEFF) + csv], { type: "text/csv;charset=utf-8" });
+  const downloads = store.mode === "claude" ? await window.claude.use("downloads").catch(() => null) : null;
+  if (downloads) { downloads.save({ filename, data: blob }).catch(() => {}); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+});
+
+$("#loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("#loginErr").textContent = "";
+  try { await store.login($("#loginPw").value); $("#loginPw").value = ""; }
+  catch (err) { $("#loginErr").textContent = "Passwort falsch oder keine Verbindung."; }
+});
+$("#logoutBtn").addEventListener("click", async () => {
+  if (!confirm("Auf diesem Gerät abmelden?")) return;
+  await store.sb.auth.signOut(); location.reload();
+});
+
+render();
+store.init();
+</script>
+</body>
+</html>
