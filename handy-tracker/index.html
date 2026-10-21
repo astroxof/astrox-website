@@ -3,87 +3,141 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Handy-Tracker</title>
+<title>Connect-Experts Handy-Tracker</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  /* Markenfarben – hier anpassen */
   :root {
-    --bg: #f5f6f8; --card: #ffffff; --text: #1b1d22; --muted: #646a75; --border: #dfe2e7;
-    --accent: #2563eb; --accent-text: #ffffff; --accent-soft: #e6eefc;
-    --danger: #c42b2b; --ok: #15803d; --warn: #b45309; --shadow: 0 1px 2px rgba(0,0,0,.06);
+    --brand: #0b63ce; --brand-2: #00b3e3; --brand-ink: #ffffff; --brand-dark: #0a1a33;
+    --bg: #f2f5f9; --card: #ffffff; --text: #0f1b2d; --muted: #5d6b80; --border: #e1e7ef;
+    --soft: #e8f1fd; --danger: #d23b3b; --ok: #12a150; --warn: #c27c0e;
+    --shadow: 0 1px 2px rgba(15,27,45,.05), 0 4px 16px rgba(15,27,45,.06);
+    --radius: 14px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #111317; --card: #1a1d23; --text: #e8eaee; --muted: #9aa1ad; --border: #2c313a;
-      --accent: #5b8def; --accent-text: #0b1020; --accent-soft: #1d2a44;
-      --danger: #f06a6a; --ok: #4ade80; --warn: #fbbf24; --shadow: none;
+      --brand: #3d8bff; --brand-2: #22c4f0; --brand-ink: #06101f; --brand-dark: #070f1d;
+      --bg: #0b111b; --card: #121a27; --text: #e6ecf5; --muted: #8e9bb0; --border: #223047;
+      --soft: #15274a; --danger: #ff6b6b; --ok: #3ddc84; --warn: #f5b942; --shadow: none;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #111317; --card: #1a1d23; --text: #e8eaee; --muted: #9aa1ad; --border: #2c313a;
-    --accent: #5b8def; --accent-text: #0b1020; --accent-soft: #1d2a44;
-    --danger: #f06a6a; --ok: #4ade80; --warn: #fbbf24; --shadow: none;
+    --brand: #3d8bff; --brand-2: #22c4f0; --brand-ink: #06101f; --brand-dark: #070f1d;
+    --bg: #0b111b; --card: #121a27; --text: #e6ecf5; --muted: #8e9bb0; --border: #223047;
+    --soft: #15274a; --danger: #ff6b6b; --ok: #3ddc84; --warn: #f5b942; --shadow: none;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 16px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-  h1 { font-size: 22px; margin: 0; }
-  h2 { font-size: 17px; margin: 0 0 12px; }
-  .status { font-size: 13px; color: var(--muted); }
-  .status b { color: var(--ok); font-weight: 600; }
-  .status b.local { color: var(--warn); }
-  nav { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-  nav button { background: transparent; border: 1px solid var(--border); color: var(--text); }
-  nav button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
-  button { font: inherit; border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--accent);
-    background: var(--accent); color: var(--accent-text); }
-  button.ghost { background: transparent; color: var(--text); border-color: var(--border); }
+    font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  .topbar { background: linear-gradient(120deg, var(--brand-dark) 0%, #0d2a57 55%, var(--brand) 100%); color: #fff; }
+  .topbar .inner { max-width: 1000px; margin: 0 auto; padding: 18px 16px 64px; }
+  .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand img { height: 40px; width: auto; display: block; }
+  .mark { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; flex: none;
+    background: linear-gradient(135deg, var(--brand-2), #3d8bff); box-shadow: 0 4px 14px rgba(0,179,227,.35); }
+  .mark svg { width: 22px; height: 22px; }
+  .wordmark { font-weight: 800; font-size: 19px; letter-spacing: -.01em; line-height: 1.1; }
+  .wordmark span { color: var(--brand-2); }
+  .sub { font-size: 12px; opacity: .75; letter-spacing: .08em; text-transform: uppercase; }
+  .status { font-size: 12.5px; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.12); white-space: nowrap; }
+  .status i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; margin-right: 6px; }
+  .status.local i { background: #f5b942; }
+  .hero { margin-top: 22px; }
+  .hero h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .hero p { margin: 4px 0 0; opacity: .8; font-size: 14px; }
+  .wrap { max-width: 1000px; margin: -44px auto 0; padding: 0 16px 40px; }
+  nav { display: flex; gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); margin-bottom: 16px; width: fit-content; max-width: 100%; overflow-x: auto; }
+  nav button { background: transparent; border: none; color: var(--muted); font-weight: 600; padding: 8px 14px; white-space: nowrap; }
+  nav button.active { background: var(--brand); color: #fff; }
+  h2 { font-size: 16px; font-weight: 700; margin: 0 0 14px; }
+  button { font: inherit; font-weight: 600; border-radius: 10px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--brand);
+    background: var(--brand); color: #fff; transition: filter .15s, transform .05s; }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(1px); }
+  button.ghost { background: var(--card); color: var(--text); border-color: var(--border); }
   button.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
-  button.small { padding: 4px 10px; font-size: 13px; }
-  input, select, textarea { font: inherit; width: 100%; padding: 8px 10px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--card); color: var(--text); }
-  textarea { resize: vertical; min-height: 60px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  button.small { padding: 5px 11px; font-size: 13px; }
+  input, select, textarea { font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--soft); }
+  textarea { resize: vertical; min-height: 70px; }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
   .field { margin-bottom: 12px; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-  .chip { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
-  .chip.active { background: var(--accent-soft); border-color: var(--accent); }
-  .chip .n { color: var(--muted); margin-left: 4px; }
-  .list { display: flex; flex-direction: column; gap: 8px; }
-  .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; cursor: pointer; }
-  .item:hover { border-color: var(--accent); }
-  .item .title { font-weight: 600; }
+  .toolbar { margin-bottom: 14px; }
+  .search { position: relative; flex: 1; min-width: 200px; }
+  .search input { padding-left: 36px; }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); }
+  .check { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text); font-weight: 500; font-size: 14px; }
+  .check input { width: auto; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; box-shadow: var(--shadow); font-weight: 500; }
+  .stat .n { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
+  .stat .l { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .stat.active { border-color: var(--brand); box-shadow: 0 0 0 3px var(--soft); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c, var(--brand)); }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; cursor: pointer;
+    border-left: 4px solid var(--c, var(--brand)); transition: transform .1s, border-color .15s; }
+  .item:hover { transform: translateY(-1px); }
+  .item .title { font-weight: 700; }
   .item .meta { font-size: 13px; color: var(--muted); }
-  .badge { display: inline-block; border-radius: 6px; padding: 3px 9px; font-size: 13px; font-weight: 600;
-    background: var(--accent-soft); color: var(--text); white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font-size: 12.5px; font-weight: 600;
+    background: color-mix(in srgb, var(--c, var(--brand)) 14%, transparent); color: var(--text); white-space: nowrap; }
   .badge.done { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-  .timeline { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
-  .timeline li { position: relative; padding: 0 0 14px 16px; }
-  .timeline li::before { content: ""; position: absolute; left: -6px; top: 6px; width: 10px; height: 10px;
-    border-radius: 50%; background: var(--accent); }
+  .dhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dhead h2 { margin: 0; font-size: 20px; }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { position: relative; padding: 0 0 16px 22px; border-left: 2px solid var(--border); margin-left: 5px; }
+  .timeline li:last-child { border-left-color: transparent; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--card); border: 3px solid var(--brand); }
   .timeline .when { font-size: 12px; color: var(--muted); }
-  .empty { color: var(--muted); text-align: center; padding: 32px 0; }
-  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 6px 3px 12px; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 16px; }
+  .empty svg { width: 44px; height: 44px; color: var(--brand); opacity: .5; display: block; margin: 0 auto 8px; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 14px; }
   .tag button { padding: 0 7px; border-radius: 999px; background: transparent; color: var(--muted); border: none; font-size: 16px; line-height: 1.2; }
-  .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg);
-    padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
-  .toast.show { opacity: 1; }
+  .hint { color: var(--muted); font-size: 13px; margin: -6px 0 12px; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--brand-dark); color: #fff;
+    padding: 11px 18px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
   .mt { margin-top: 16px; }
   .hidden { display: none !important; }
-  @media (max-width: 560px) { .item { flex-direction: column; align-items: flex-start; } }
+  @media (max-width: 560px) {
+    .item { flex-direction: column; align-items: flex-start; }
+    .hero h1 { font-size: 22px; }
+    nav { width: 100%; }
+    nav button { flex: 1; padding: 8px 6px; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>📱 Handy-Tracker</h1>
+<div class="topbar"><div class="inner">
+  <div class="brandrow">
+    <div class="brand">
+      <img id="logo" src="logo.png" alt="Connect-Experts" onerror="this.remove(); document.getElementById('fallbackMark').classList.remove('hidden')">
+      <div id="fallbackMark" class="row hidden" style="gap:12px">
+        <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></div>
+        <div><div class="wordmark">Connect<span>-Experts</span></div><div class="sub">Mobilfunk &amp; Reparatur</div></div>
+      </div>
+    </div>
     <div class="status" id="status">Lade …</div>
-  </header>
+  </div>
+  <div class="hero">
+    <h1>Handy-Tracker</h1>
+    <p>Wo ist welches Gerät? Filialen, Techniker &amp; Kunde – mit vollständigem Verlauf.</p>
+  </div>
+</div></div>
 
+<div class="wrap">
   <nav>
     <button data-tab="list" class="active">Übersicht</button>
     <button data-tab="new">+ Neues Handy</button>
@@ -92,12 +146,13 @@
 
   <!-- Übersicht -->
   <section id="tab-list">
-    <div class="row" style="margin-bottom:12px">
-      <input id="search" placeholder="Suchen: Modell, IMEI, Kunde, Auftragsnr. …" style="flex:1;min-width:200px">
-      <label class="row" style="margin:0;color:var(--text)"><input type="checkbox" id="showDone" style="width:auto"> Abgeschlossene zeigen</label>
+    <div class="stats" id="locChips"></div>
+    <div class="row toolbar">
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" placeholder="Suchen: Modell, IMEI, Kunde, Auftragsnr. …"></div>
+      <label class="check"><input type="checkbox" id="showDone"> Abgeschlossene zeigen</label>
       <button class="ghost small" id="exportCsv">CSV-Export</button>
     </div>
-    <div class="chips" id="locChips"></div>
     <div class="list" id="deviceList"></div>
   </section>
 
@@ -105,8 +160,8 @@
   <section id="tab-detail" class="hidden">
     <button class="ghost small" id="backBtn">← Zurück</button>
     <div class="card mt">
-      <div class="row" style="justify-content:space-between">
-        <h2 id="dTitle" style="margin:0"></h2>
+      <div class="dhead">
+        <h2 id="dTitle"></h2>
         <span class="badge" id="dLoc"></span>
       </div>
       <div class="grid mt" id="dInfo"></div>
@@ -153,7 +208,7 @@
   <section id="tab-settings" class="hidden">
     <div class="card">
       <h2>Standorte</h2>
-      <p class="status">Filialen, Techniker, Lager … „An Kunde ausgegeben“ gilt als abgeschlossen.</p>
+      <p class="hint">Filialen, Techniker, Lager … „An Kunde ausgegeben“ gilt als abgeschlossen.</p>
       <div class="tag-list" id="locTags"></div>
       <form class="row" id="addLoc"><input name="v" placeholder="Neuer Standort" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
     </div>
@@ -163,12 +218,13 @@
       <form class="row" id="addEmp"><input name="v" placeholder="Name" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
     </div>
   </section>
+  <footer>Connect-Experts · Mobilfunk &amp; Reparatur · Interner Handy-Tracker</footer>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const DONE = "An Kunde ausgegeben";
-const DEFAULT_SETTINGS = { locations: ["Filiale 1", "Filiale 2", "Techniker", DONE], employees: [] };
+const DEFAULT_SETTINGS = { locations: ["Freilassing – Münchener Str.", "Freilassing – GLOBUS", "Bad Reichenhall", "Techniker", DONE], employees: [] };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -257,10 +313,17 @@ function options(list, selected, placeholder) {
     list.map((v) => `<option ${v === selected ? "selected" : ""}>${esc(v)}</option>`).join("");
 }
 
+const PALETTE = ["#0b63ce", "#00a3cc", "#7c4dff", "#e8590c", "#12a150", "#d6336c", "#c27c0e", "#0ca678"];
+function locColor(l) {
+  if (l === DONE) return "#8e9bb0";
+  const i = settings.locations.indexOf(l);
+  return PALETTE[(i >= 0 ? i : [...l].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length];
+}
+
 function render() {
-  $("#status").innerHTML = store.shared
-    ? `<b>● Geteilt</b> – alle Mitarbeiter sehen dieselben Daten`
-    : `<b class="local">● Nur dieses Gerät</b> – Daten liegen nur in diesem Browser`;
+  $("#status").className = "status" + (store.shared ? "" : " local");
+  $("#status").innerHTML = store.shared ? `<i></i>Live – für alle Filialen` : `<i></i>Nur dieses Gerät`;
+  $("#status").title = store.shared ? "Alle Mitarbeiter sehen dieselben Daten" : "Daten liegen nur in diesem Browser";
 
   // Formulare
   const nLoc = $("#nLoc").value, nEmp = $("#nEmp").value;
@@ -269,10 +332,10 @@ function render() {
 
   // Einstellungen
   $("#locTags").innerHTML = settings.locations.map((l, i) =>
-    `<span class="tag">${esc(l)}${l === DONE ? "" : `<button title="Entfernen" data-del-loc="${i}">×</button>`}</span>`).join("");
+    `<span class="tag" style="--c:${locColor(l)}"><span class="dot"></span>${esc(l)}${l === DONE ? "" : `<button title="Entfernen" data-del-loc="${i}">×</button>`}</span>`).join("");
   $("#empTags").innerHTML = settings.employees.map((e, i) =>
     `<span class="tag">${esc(e)}<button title="Entfernen" data-del-emp="${i}">×</button></span>`).join("") ||
-    `<span class="status">Noch keine Mitarbeiter eingetragen.</span>`;
+    `<span class="hint">Noch keine Mitarbeiter eingetragen.</span>`;
 
   renderList();
   if (currentId) renderDetail();
@@ -287,8 +350,8 @@ function renderList() {
   active.forEach((d) => counts[d.location] = (counts[d.location] || 0) + 1);
   const locs = [...new Set([...settings.locations, ...Object.keys(counts)])].filter((l) => showDone || l !== DONE);
   $("#locChips").innerHTML =
-    `<button class="chip ${filterLoc ? "" : "active"}" data-loc="">Alle<span class="n">${active.length}</span></button>` +
-    locs.map((l) => `<button class="chip ${filterLoc === l ? "active" : ""}" data-loc="${esc(l)}">${esc(l)}<span class="n">${counts[l] || 0}</span></button>`).join("");
+    `<button class="stat ${filterLoc ? "" : "active"}" data-loc=""><span class="n">${active.length}</span><span class="l">Alle Geräte</span></button>` +
+    locs.map((l) => `<button class="stat ${filterLoc === l ? "active" : ""}" data-loc="${esc(l)}" style="--c:${locColor(l)}"><span class="n">${counts[l] || 0}</span><span class="l"><span class="dot"></span>${esc(l)}</span></button>`).join("");
 
   const list = active
     .filter((d) => !filterLoc || d.location === filterLoc)
@@ -297,23 +360,24 @@ function renderList() {
 
   $("#deviceList").innerHTML = list.length ? list.map((d) => {
     const last = d.history[d.history.length - 1];
-    return `<div class="card item" data-id="${esc(d.id)}">
+    return `<div class="card item" data-id="${esc(d.id)}" style="--c:${locColor(d.location)}">
       <div>
         <div class="title">${esc(d.model)}${d.order ? ` <span class="meta">#${esc(d.order)}</span>` : ""}</div>
         <div class="meta">${[d.imei && "IMEI " + esc(d.imei), d.customer && esc(d.customer)].filter(Boolean).join(" · ") || "&nbsp;"}</div>
         <div class="meta">Zuletzt: ${esc(last.employee)} · ${fmt(last.ts)}</div>
       </div>
-      <span class="badge ${d.location === DONE ? "done" : ""}">${esc(d.location)}</span>
+      <span class="badge ${d.location === DONE ? "done" : ""}"><span class="dot"></span>${esc(d.location)}</span>
     </div>`;
-  }).join("") : `<div class="empty">${devices.length ? "Keine Treffer." : "Noch keine Handys erfasst. Lege oben mit „+ Neues Handy“ das erste an."}</div>`;
+  }).join("") : `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>${devices.length ? "Keine Treffer." : "Noch keine Handys erfasst. Lege oben mit „+ Neues Handy“ das erste an."}</div>`;
 }
 
 function renderDetail() {
   const d = devices.find((x) => x.id === currentId);
   if (!d) { showTab("list"); return; }
   $("#dTitle").textContent = d.model;
-  $("#dLoc").textContent = d.location;
+  $("#dLoc").innerHTML = `<span class="dot"></span>${esc(d.location)}`;
   $("#dLoc").className = "badge" + (d.location === DONE ? " done" : "");
+  $("#dLoc").style.setProperty("--c", locColor(d.location));
   const info = [["IMEI / Seriennr.", d.imei], ["Auftragsnr.", d.order], ["Kunde", d.customer], ["Erfasst", fmt(d.createdAt)], ["Fehler / Notiz", d.note]];
   $("#dInfo").innerHTML = info.filter(([, v]) => v).map(([k, v]) => `<div><label>${k}</label>${esc(v)}</div>`).join("");
 
