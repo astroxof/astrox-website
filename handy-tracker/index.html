@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handy-Tracker</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1b1d22; --muted: #646a75; --border: #dfe2e7;
+    --accent: #2563eb; --accent-text: #ffffff; --accent-soft: #e6eefc;
+    --danger: #c42b2b; --ok: #15803d; --warn: #b45309; --shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111317; --card: #1a1d23; --text: #e8eaee; --muted: #9aa1ad; --border: #2c313a;
+      --accent: #5b8def; --accent-text: #0b1020; --accent-soft: #1d2a44;
+      --danger: #f06a6a; --ok: #4ade80; --warn: #fbbf24; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111317; --card: #1a1d23; --text: #e8eaee; --muted: #9aa1ad; --border: #2c313a;
+    --accent: #5b8def; --accent-text: #0b1020; --accent-soft: #1d2a44;
+    --danger: #f06a6a; --ok: #4ade80; --warn: #fbbf24; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  .status { font-size: 13px; color: var(--muted); }
+  .status b { color: var(--ok); font-weight: 600; }
+  .status b.local { color: var(--warn); }
+  nav { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  nav button { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  nav button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  button { font: inherit; border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--accent);
+    background: var(--accent); color: var(--accent-text); }
+  button.ghost { background: transparent; color: var(--text); border-color: var(--border); }
+  button.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  input, select, textarea { font: inherit; width: 100%; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  textarea { resize: vertical; min-height: 60px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .field { margin-bottom: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+  .chip.active { background: var(--accent-soft); border-color: var(--accent); }
+  .chip .n { color: var(--muted); margin-left: 4px; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; cursor: pointer; }
+  .item:hover { border-color: var(--accent); }
+  .item .title { font-weight: 600; }
+  .item .meta { font-size: 13px; color: var(--muted); }
+  .badge { display: inline-block; border-radius: 6px; padding: 3px 9px; font-size: 13px; font-weight: 600;
+    background: var(--accent-soft); color: var(--text); white-space: nowrap; }
+  .badge.done { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .timeline { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+  .timeline li { position: relative; padding: 0 0 14px 16px; }
+  .timeline li::before { content: ""; position: absolute; left: -6px; top: 6px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--accent); }
+  .timeline .when { font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 32px 0; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 6px 3px 12px; }
+  .tag button { padding: 0 7px; border-radius: 999px; background: transparent; color: var(--muted); border: none; font-size: 16px; line-height: 1.2; }
+  .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg);
+    padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .mt { margin-top: 16px; }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) { .item { flex-direction: column; align-items: flex-start; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📱 Handy-Tracker</h1>
+    <div class="status" id="status">Lade …</div>
+  </header>
+
+  <nav>
+    <button data-tab="list" class="active">Übersicht</button>
+    <button data-tab="new">+ Neues Handy</button>
+    <button data-tab="settings">Einstellungen</button>
+  </nav>
+
+  <!-- Übersicht -->
+  <section id="tab-list">
+    <div class="row" style="margin-bottom:12px">
+      <input id="search" placeholder="Suchen: Modell, IMEI, Kunde, Auftragsnr. …" style="flex:1;min-width:200px">
+      <label class="row" style="margin:0;color:var(--text)"><input type="checkbox" id="showDone" style="width:auto"> Abgeschlossene zeigen</label>
+      <button class="ghost small" id="exportCsv">CSV-Export</button>
+    </div>
+    <div class="chips" id="locChips"></div>
+    <div class="list" id="deviceList"></div>
+  </section>
+
+  <!-- Detail -->
+  <section id="tab-detail" class="hidden">
+    <button class="ghost small" id="backBtn">← Zurück</button>
+    <div class="card mt">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="dTitle" style="margin:0"></h2>
+        <span class="badge" id="dLoc"></span>
+      </div>
+      <div class="grid mt" id="dInfo"></div>
+    </div>
+
+    <div class="card mt" id="moveCard">
+      <h2>Handy weitergeben</h2>
+      <div class="grid">
+        <div class="field"><label>Neuer Standort</label><select id="mTo"></select></div>
+        <div class="field"><label>Mitarbeiter</label><select id="mEmp"></select></div>
+      </div>
+      <div class="field"><label>Notiz (optional)</label><input id="mNote" placeholder="z. B. Display-Tausch, Paket-Nr. …"></div>
+      <button id="moveBtn">Bewegung eintragen</button>
+    </div>
+
+    <div class="card mt">
+      <h2>Verlauf</h2>
+      <ul class="timeline" id="dHistory"></ul>
+    </div>
+
+    <div class="row mt">
+      <button class="danger small" id="deleteBtn">Handy löschen</button>
+    </div>
+  </section>
+
+  <!-- Neues Handy -->
+  <section id="tab-new" class="hidden">
+    <form class="card" id="newForm">
+      <h2>Neues Handy erfassen</h2>
+      <div class="grid">
+        <div class="field"><label>Modell *</label><input name="model" required placeholder="z. B. iPhone 14 Pro"></div>
+        <div class="field"><label>IMEI / Seriennummer</label><input name="imei"></div>
+        <div class="field"><label>Auftragsnummer</label><input name="order"></div>
+        <div class="field"><label>Kunde</label><input name="customer" placeholder="Name / Telefon"></div>
+        <div class="field"><label>Aktueller Standort *</label><select name="location" id="nLoc" required></select></div>
+        <div class="field"><label>Mitarbeiter *</label><select name="employee" id="nEmp" required></select></div>
+      </div>
+      <div class="field"><label>Fehler / Notiz</label><textarea name="note" placeholder="z. B. Akku tauschen, Displaybruch …"></textarea></div>
+      <button type="submit">Speichern</button>
+    </form>
+  </section>
+
+  <!-- Einstellungen -->
+  <section id="tab-settings" class="hidden">
+    <div class="card">
+      <h2>Standorte</h2>
+      <p class="status">Filialen, Techniker, Lager … „An Kunde ausgegeben“ gilt als abgeschlossen.</p>
+      <div class="tag-list" id="locTags"></div>
+      <form class="row" id="addLoc"><input name="v" placeholder="Neuer Standort" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
+    </div>
+    <div class="card mt">
+      <h2>Mitarbeiter</h2>
+      <div class="tag-list" id="empTags"></div>
+      <form class="row" id="addEmp"><input name="v" placeholder="Name" style="flex:1;min-width:160px"><button>Hinzufügen</button></form>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DONE = "An Kunde ausgegeben";
+const DEFAULT_SETTINGS = { locations: ["Filiale 1", "Filiale 2", "Techniker", DONE], employees: [] };
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (ts) => new Date(ts).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+let devices = [];
+let settings = { ...DEFAULT_SETTINGS };
+let filterLoc = null;
+let currentId = null;
+
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ---------- Speicher: geteilte Datenbank, sonst lokal im Browser ----------
+const store = {
+  shared: false,
+  db: null,
+  async init() {
+    try {
+      const db = window.claude?.use ? await window.claude.use("db") : null;
+      if (db) {
+        this.db = db; this.shared = true;
+        db.collection("devices").onSnapshot((snap) => {
+          devices = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          render();
+        }, () => toast("Verbindung zur Datenbank verloren – bitte Seite neu laden."));
+        db.doc("settings/main").onSnapshot((snap) => {
+          settings = snap.exists ? { ...DEFAULT_SETTINGS, ...snap.data() } : { ...DEFAULT_SETTINGS };
+          render();
+        });
+        return;
+      }
+    } catch (e) { /* fallback */ }
+    this.loadLocal();
+  },
+  loadLocal() {
+    try {
+      devices = JSON.parse(localStorage.getItem("ht_devices") || "[]");
+      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem("ht_settings") || "{}") };
+    } catch (e) { devices = []; }
+    render();
+  },
+  saveLocal() {
+    try {
+      localStorage.setItem("ht_devices", JSON.stringify(devices));
+      localStorage.setItem("ht_settings", JSON.stringify(settings));
+    } catch (e) { toast("Speichern im Browser nicht möglich."); }
+  },
+  async saveDevice(dev) {
+    const { id, ...body } = dev;
+    if (this.shared) {
+      try { await this.db.doc("devices/" + id).set(body); }
+      catch (e) { toast(e.code === "invalid_argument" ? "Keine Schreibrechte." : "Speichern fehlgeschlagen."); throw e; }
+    } else {
+      const i = devices.findIndex((d) => d.id === id);
+      if (i >= 0) devices[i] = dev; else devices.push(dev);
+      this.saveLocal(); render();
+    }
+  },
+  async deleteDevice(id) {
+    if (this.shared) await this.db.doc("devices/" + id).delete();
+    else { devices = devices.filter((d) => d.id !== id); this.saveLocal(); render(); }
+  },
+  async saveSettings(next) {
+    settings = next;
+    if (this.shared) {
+      try { await this.db.doc("settings/main").set(next); } catch (e) { toast("Speichern fehlgeschlagen."); }
+    } else { this.saveLocal(); }
+    render();
+  },
+};
+
+// ---------- Ansicht ----------
+function showTab(name) {
+  for (const t of ["list", "new", "settings", "detail"]) $("#tab-" + t).classList.toggle("hidden", t !== name);
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name || (name === "detail" && b.dataset.tab === "list")));
+  if (name !== "detail") currentId = null;
+  window.scrollTo(0, 0);
+}
+
+function options(list, selected, placeholder) {
+  return (placeholder ? `<option value="">${esc(placeholder)}</option>` : "") +
+    list.map((v) => `<option ${v === selected ? "selected" : ""}>${esc(v)}</option>`).join("");
+}
+
+function render() {
+  $("#status").innerHTML = store.shared
+    ? `<b>● Geteilt</b> – alle Mitarbeiter sehen dieselben Daten`
+    : `<b class="local">● Nur dieses Gerät</b> – Daten liegen nur in diesem Browser`;
+
+  // Formulare
+  const nLoc = $("#nLoc").value, nEmp = $("#nEmp").value;
+  $("#nLoc").innerHTML = options(settings.locations.filter((l) => l !== DONE), nLoc, "Bitte wählen");
+  $("#nEmp").innerHTML = options(settings.employees, nEmp, settings.employees.length ? "Bitte wählen" : "Erst unter Einstellungen anlegen");
+
+  // Einstellungen
+  $("#locTags").innerHTML = settings.locations.map((l, i) =>
+    `<span class="tag">${esc(l)}${l === DONE ? "" : `<button title="Entfernen" data-del-loc="${i}">×</button>`}</span>`).join("");
+  $("#empTags").innerHTML = settings.employees.map((e, i) =>
+    `<span class="tag">${esc(e)}<button title="Entfernen" data-del-emp="${i}">×</button></span>`).join("") ||
+    `<span class="status">Noch keine Mitarbeiter eingetragen.</span>`;
+
+  renderList();
+  if (currentId) renderDetail();
+}
+
+function renderList() {
+  const showDone = $("#showDone").checked;
+  const q = $("#search").value.trim().toLowerCase();
+  const active = devices.filter((d) => showDone || d.location !== DONE);
+
+  const counts = {};
+  active.forEach((d) => counts[d.location] = (counts[d.location] || 0) + 1);
+  const locs = [...new Set([...settings.locations, ...Object.keys(counts)])].filter((l) => showDone || l !== DONE);
+  $("#locChips").innerHTML =
+    `<button class="chip ${filterLoc ? "" : "active"}" data-loc="">Alle<span class="n">${active.length}</span></button>` +
+    locs.map((l) => `<button class="chip ${filterLoc === l ? "active" : ""}" data-loc="${esc(l)}">${esc(l)}<span class="n">${counts[l] || 0}</span></button>`).join("");
+
+  const list = active
+    .filter((d) => !filterLoc || d.location === filterLoc)
+    .filter((d) => !q || [d.model, d.imei, d.customer, d.order, d.note].some((v) => String(v || "").toLowerCase().includes(q)))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+
+  $("#deviceList").innerHTML = list.length ? list.map((d) => {
+    const last = d.history[d.history.length - 1];
+    return `<div class="card item" data-id="${esc(d.id)}">
+      <div>
+        <div class="title">${esc(d.model)}${d.order ? ` <span class="meta">#${esc(d.order)}</span>` : ""}</div>
+        <div class="meta">${[d.imei && "IMEI " + esc(d.imei), d.customer && esc(d.customer)].filter(Boolean).join(" · ") || "&nbsp;"}</div>
+        <div class="meta">Zuletzt: ${esc(last.employee)} · ${fmt(last.ts)}</div>
+      </div>
+      <span class="badge ${d.location === DONE ? "done" : ""}">${esc(d.location)}</span>
+    </div>`;
+  }).join("") : `<div class="empty">${devices.length ? "Keine Treffer." : "Noch keine Handys erfasst. Lege oben mit „+ Neues Handy“ das erste an."}</div>`;
+}
+
+function renderDetail() {
+  const d = devices.find((x) => x.id === currentId);
+  if (!d) { showTab("list"); return; }
+  $("#dTitle").textContent = d.model;
+  $("#dLoc").textContent = d.location;
+  $("#dLoc").className = "badge" + (d.location === DONE ? " done" : "");
+  const info = [["IMEI / Seriennr.", d.imei], ["Auftragsnr.", d.order], ["Kunde", d.customer], ["Erfasst", fmt(d.createdAt)], ["Fehler / Notiz", d.note]];
+  $("#dInfo").innerHTML = info.filter(([, v]) => v).map(([k, v]) => `<div><label>${k}</label>${esc(v)}</div>`).join("");
+
+  const to = $("#mTo").value, emp = $("#mEmp").value;
+  $("#mTo").innerHTML = options(settings.locations.filter((l) => l !== d.location), to, "Bitte wählen");
+  $("#mEmp").innerHTML = options(settings.employees, emp, settings.employees.length ? "Bitte wählen" : "Erst unter Einstellungen anlegen");
+
+  $("#dHistory").innerHTML = [...d.history].reverse().map((h) => `<li>
+    <div><b>${h.from ? `${esc(h.from)} → ` : "Erfasst in "}${esc(h.to)}</b></div>
+    <div>${esc(h.employee)}${h.note ? " – " + esc(h.note) : ""}</div>
+    <div class="when">${fmt(h.ts)}</div></li>`).join("");
+}
+
+// ---------- Aktionen ----------
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+$("#backBtn").addEventListener("click", () => showTab("list"));
+$("#search").addEventListener("input", renderList);
+$("#showDone").addEventListener("change", renderList);
+$("#locChips").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-loc]"); if (!c) return;
+  filterLoc = c.dataset.loc || null; renderList();
+});
+$("#deviceList").addEventListener("click", (e) => {
+  const it = e.target.closest("[data-id]"); if (!it) return;
+  currentId = it.dataset.id; $("#mNote").value = ""; showTab("detail"); renderDetail();
+});
+
+$("#newForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  if (!f.employee) { toast("Bitte Mitarbeiter wählen (ggf. unter Einstellungen anlegen)."); return; }
+  const now = Date.now();
+  const dev = {
+    id: uid(), model: f.model.trim(), imei: f.imei.trim(), order: f.order.trim(), customer: f.customer.trim(),
+    note: f.note.trim(), location: f.location, createdAt: now, updatedAt: now,
+    history: [{ ts: now, from: null, to: f.location, employee: f.employee, note: "" }],
+  };
+  try { await store.saveDevice(dev); } catch (err) { return; }
+  e.target.reset(); render(); toast("Handy gespeichert."); showTab("list");
+});
+
+$("#moveBtn").addEventListener("click", async () => {
+  const d = devices.find((x) => x.id === currentId); if (!d) return;
+  const to = $("#mTo").value, emp = $("#mEmp").value, note = $("#mNote").value.trim();
+  if (!to || !emp) { toast("Bitte Standort und Mitarbeiter wählen."); return; }
+  const now = Date.now();
+  const next = { ...d, location: to, updatedAt: now, history: [...d.history, { ts: now, from: d.location, to, employee: emp, note }] };
+  try { await store.saveDevice(next); } catch (err) { return; }
+  $("#mNote").value = ""; $("#mTo").value = ""; toast(`Eingetragen: ${d.location} → ${to}`);
+});
+
+$("#deleteBtn").addEventListener("click", async () => {
+  const d = devices.find((x) => x.id === currentId); if (!d) return;
+  if (!confirm(`„${d.model}“ wirklich löschen? Der Verlauf geht verloren.`)) return;
+  await store.deleteDevice(d.id); showTab("list"); toast("Gelöscht.");
+});
+
+function addTo(key, formSel) {
+  $(formSel).addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = e.target.v.value.trim(); if (!v) return;
+    if (settings[key].includes(v)) { toast("Gibt es schon."); return; }
+    const list = [...settings[key]];
+    if (key === "locations") list.splice(Math.max(0, list.indexOf(DONE)), 0, v); else list.push(v);
+    store.saveSettings({ ...settings, [key]: list }); e.target.reset();
+  });
+}
+addTo("locations", "#addLoc");
+addTo("employees", "#addEmp");
+document.addEventListener("click", (e) => {
+  const l = e.target.dataset.delLoc, m = e.target.dataset.delEmp;
+  if (l !== undefined) store.saveSettings({ ...settings, locations: settings.locations.filter((_, i) => i !== +l) });
+  if (m !== undefined) store.saveSettings({ ...settings, employees: settings.employees.filter((_, i) => i !== +m) });
+});
+
+$("#exportCsv").addEventListener("click", async () => {
+  const rows = [["Modell", "IMEI", "Auftragsnr.", "Kunde", "Standort", "Zeitpunkt", "Von", "Nach", "Mitarbeiter", "Notiz"]];
+  devices.forEach((d) => d.history.forEach((h) =>
+    rows.push([d.model, d.imei, d.order, d.customer, d.location, fmt(h.ts), h.from || "", h.to, h.employee, h.note])));
+  const csv = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const filename = `handy-tracker-${new Date().toISOString().slice(0, 10)}.csv`;
+  const blob = new Blob([String.fromCharCode(0xFEFF) + csv], { type: "text/csv;charset=utf-8" });
+  const downloads = store.shared ? await window.claude.use("downloads").catch(() => null) : null;
+  if (downloads) { downloads.save({ filename, data: blob }).catch(() => {}); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+});
+
+render();
+store.init();
+</script>
+</body>
+</html>
