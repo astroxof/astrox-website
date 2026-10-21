@@ -224,7 +224,7 @@
 
 <script>
 const DONE = "An Kunde ausgegeben";
-const DEFAULT_SETTINGS = { locations: ["Freilassing – Münchener Str.", "Freilassing – GLOBUS", "Bad Reichenhall", "Techniker", DONE], employees: [] };
+const DEFAULT_SETTINGS = { locations: ["Freilassing", "Globus", "Bad Reichenhall", "Techniker", DONE], employees: [] };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
