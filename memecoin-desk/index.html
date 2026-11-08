@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Memecoin Desk</title>
+  <meta name="description" content="Six-agent Solana memecoin paper-trading desk: Scout, Filter, Analyst, Executor, Risk, Logger." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --card-2: #181826;
+      --text: #e0e0ff;
+      --muted: #9a9abb;
+      --faint: #5d5d7a;
+      --accent: #8a4eff;
+      --accent-soft: rgba(138, 78, 255, 0.16);
+      --border: #2a2a40;
+      --good: #3ddc97;
+      --bad: #ff5c7a;
+      --warn: #ffb547;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', system-ui, sans-serif; line-height: 1.5; min-height: 100vh; }
+    a { color: inherit; }
+    button { font: inherit; }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+
+    header.top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; padding: 22px 0 18px; }
+    .brand .logo { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; background: linear-gradient(135deg, #8a4eff, #b388ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .brand .sub { color: var(--muted); font-size: 0.9rem; }
+    .tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--warn); color: var(--warn); vertical-align: 1px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .btn { background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 10px; padding: 8px 16px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 0 18px rgba(138, 78, 255, 0.35); }
+    .btn.ghost { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn.ghost:hover { border-color: var(--accent); box-shadow: none; }
+    .btn.danger { background: transparent; color: var(--bad); border-color: rgba(255, 92, 122, 0.5); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 0.85rem; color: var(--muted); padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; }
+    .pill::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+    .pill.live::before { background: var(--good); box-shadow: 0 0 0 4px rgba(61, 220, 151, 0.18); animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(61, 220, 151, 0); } }
+
+    .banner { border: 1px solid rgba(255, 181, 71, 0.45); background: rgba(255, 181, 71, 0.08); color: var(--text); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.92rem; }
+    .banner b { color: var(--warn); }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+    .kpi .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi .value { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .kpi .hint { color: var(--muted); font-size: 0.82rem; font-family: var(--mono); }
+    .pos { color: var(--good); }
+    .neg { color: var(--bad); }
+
+    .pipeline { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .agent { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 12px 11px; min-width: 0; }
+    .agent:not(:last-child)::after { content: '→'; position: absolute; right: -10px; top: 50%; transform: translate(50%, -50%); color: var(--faint); font-size: 0.9rem; z-index: 1; }
+    .agent .n { color: var(--faint); font-family: var(--mono); font-size: 0.72rem; }
+    .agent .name { font-weight: 700; font-size: 0.98rem; }
+    .agent .big { font-family: var(--mono); font-size: 1.25rem; font-weight: 600; margin-top: 4px; }
+    .agent .small { color: var(--muted); font-size: 0.78rem; line-height: 1.3; }
+    .agent .rule { color: var(--faint); font-size: 0.72rem; margin-top: 6px; line-height: 1.3; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; min-width: 0; }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .card h2 small { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid2 .card { margin-bottom: 14px; }
+    .empty { color: var(--faint); font-size: 0.9rem; padding: 6px 0; }
+
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th { color: var(--muted); font-weight: 500; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; font-size: 0.78rem; }
+    td { padding: 7px 8px; border-bottom: 1px solid rgba(42, 42, 64, 0.6); white-space: nowrap; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    td.sym, td.text { font-family: inherit; }
+    th.r, td.r { text-align: right; }
+    .sym a { font-weight: 600; text-decoration: none; border-bottom: 1px dotted var(--faint); }
+    .sym a:hover { color: #b388ff; }
+
+    .feed { max-height: 460px; overflow-y: auto; padding-right: 4px; }
+    .item { padding: 8px 0; border-bottom: 1px solid rgba(42, 42, 64, 0.6); font-size: 0.86rem; }
+    .item:last-child { border-bottom: 0; }
+    .item .head { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+    .item .time { color: var(--faint); font-family: var(--mono); font-size: 0.78rem; }
+    .item .why { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+    .item .recheck { color: var(--faint); font-size: 0.75rem; margin-left: auto; }
+    .badge { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 7px; border-radius: 6px; background: var(--accent-soft); color: #c4a6ff; }
+    .badge.filter { background: rgba(255, 92, 122, 0.13); color: #ff8fa3; }
+    .badge.analyst { background: rgba(255, 181, 71, 0.13); color: #ffc874; }
+    .badge.entry { background: rgba(61, 220, 151, 0.14); color: var(--good); }
+    .badge.exit { background: rgba(138, 78, 255, 0.18); color: #c4a6ff; }
+    .badge.error { background: rgba(255, 181, 71, 0.13); color: var(--warn); }
+    .score { font-family: var(--mono); font-size: 0.78rem; color: var(--faint); }
+
+    .rules dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 0.88rem; }
+    .rules dt { font-weight: 600; }
+    .rules dd { color: var(--muted); }
+
+    footer { color: var(--faint); font-size: 0.82rem; text-align: center; padding: 18px 16px 30px; }
+
+    dialog { margin: auto; background: var(--card-2); color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 0; width: min(560px, calc(100vw - 32px)); }
+    dialog::backdrop { background: rgba(5, 5, 10, 0.7); }
+    dialog form { padding: 18px; display: grid; gap: 14px; }
+    dialog h3 { font-size: 1.1rem; }
+    dialog label { display: grid; gap: 5px; font-size: 0.88rem; color: var(--muted); }
+    dialog input, dialog textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; font: 0.88rem var(--mono); width: 100%; }
+    dialog textarea { min-height: 96px; resize: vertical; }
+    dialog input:focus, dialog textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+    dialog .note { font-size: 0.8rem; color: var(--faint); }
+    dialog .note a { color: #b388ff; }
+    dialog .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+    dialog .msg { color: var(--warn); font-size: 0.88rem; }
+
+    @media (max-width: 980px) {
+      .pipeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .agent:nth-child(3)::after { display: none; }
+    }
+    @media (max-width: 760px) {
+      .grid2 { grid-template-columns: 1fr; }
+      .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .agent:nth-child(3)::after { display: block; }
+      .agent:nth-child(2n)::after { display: none; }
+      .rules dl { grid-template-columns: 1fr; gap: 2px; }
+      .rules dd { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">Memecoin Desk</div>
+        <div class="sub">Solana · six agents, hard handoffs · <span class="tag">PAPER</span></div>
+      </div>
+      <div class="controls">
+        <span id="status" class="pill">Loading…</span>
+        <button id="startBtn" class="btn" type="button">Start</button>
+        <button id="settingsBtn" class="btn ghost" type="button">Settings</button>
+        <button id="reportBtn" class="btn ghost" type="button">Report</button>
+        <button id="exportBtn" class="btn ghost" type="button">Export log</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <section class="kpis">
+      <div class="kpi"><div class="label">Equity</div><div class="value" id="kEquity">–</div><div class="hint" id="kEquityUsd">–</div></div>
+      <div class="kpi"><div class="label">Paper PnL</div><div class="value" id="kPnl">–</div><div class="hint" id="kPnlSol">–</div></div>
+      <div class="kpi"><div class="label">Open positions</div><div class="value" id="kOpen">–</div><div class="hint" id="kCash">–</div></div>
+      <div class="kpi"><div class="label">Closed trades</div><div class="value" id="kTrades">–</div><div class="hint" id="kWin">–</div></div>
+      <div class="kpi"><div class="label">Last scan</div><div class="value" id="kCycle">–</div><div class="hint" id="kScan">–</div></div>
+    </section>
+
+    <section class="pipeline" id="pipeline" aria-label="Agent pipeline"></section>
+
+    <section class="card">
+      <h2>Open positions <small>stops armed before entry · re-priced every 15s</small></h2>
+      <div id="positions" class="scroll"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>Kill log <small id="killCount"></small></h2>
+        <div id="kills" class="feed"></div>
+      </section>
+      <section class="card">
+        <h2>Desk activity <small>handoffs, fills, exits</small></h2>
+        <div id="events" class="feed"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Closed trades</h2>
+      <div id="closed" class="scroll"></div>
+    </section>
+
+    <section class="card rules">
+      <h2>Rules in force</h2>
+      <dl id="rules"></dl>
+    </section>
+  </div>
+
+  <footer>Paper trading only: no wallet is connected and no real order is ever sent. Memecoins are extremely risky; nothing here is financial advice.</footer>
+
+  <dialog id="settings">
+    <form method="dialog" id="settingsForm">
+      <h3>Settings</h3>
+      <div class="msg" id="settingsMsg" hidden></div>
+      <label>Solana RPC URL (required in the browser)
+        <input id="sRpc" type="url" placeholder="https://mainnet.helius-rpc.com/?api-key=…" autocomplete="off" spellcheck="false" />
+      </label>
+      <p class="note">The public Solana RPC refuses requests from web pages, so the browser desk needs your own endpoint. A free one works, e.g. from <a href="https://www.helius.dev" target="_blank" rel="noopener">Helius</a>. It is stored only in this browser.</p>
+      <label>Paper bankroll (SOL)
+        <input id="sBankroll" type="number" min="0.1" step="0.1" value="10" />
+      </label>
+      <label>Smart wallets (one per line: <code>address</code> or <code>address label</code>)
+        <textarea id="sWallets" spellcheck="false" placeholder="7xKX…  kol-1"></textarea>
+      </label>
+      <p class="note">Bankroll changes apply to a new paper account. Thresholds come from <code>lib/config.js</code>.</p>
+      <div class="row">
+        <button class="btn danger" type="button" id="resetBtn">Reset paper account</button>
+        <span>
+          <button class="btn ghost" value="cancel" formnovalidate>Close</button>
+          <button class="btn" id="saveSettings" value="save">Save</button>
+        </span>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module">
+    import { Desk } from './lib/desk.js';
+    import { buildReport } from './lib/report.js';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const isAddr = (s) => typeof s === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s);
+    const SETTINGS_KEY = 'memecoin-desk:settings';
+    const STATE_KEY = 'memecoin-desk:state';
+    const storage = {
+      get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+      set: (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } },
+      del: (k) => { try { localStorage.removeItem(k); } catch { /* ignore */ } },
+    };
+
+    // ---------- formatting ----------
+    const SUB = '₀₁₂₃₄₅₆₇₈₉';
+    function tiny(x) {
+      if (!Number.isFinite(x)) return '–';
+      if (x === 0) return '0';
+      if (x >= 0.001) return x.toPrecision(4);
+      const zeros = Math.floor(-Math.log10(x));
+      const digits = Math.round(x * 10 ** (zeros + 3));
+      return `0.0${String(zeros - 1).split('').map((d) => SUB[d]).join('')}${digits}`;
+    }
+    const sol = (x, d = 3) => (Number.isFinite(x) ? `${x.toFixed(d)} SOL` : '–');
+    const pct = (x, d = 1) => (Number.isFinite(x) ? `${x >= 0 ? '+' : ''}${x.toFixed(d)}%` : '–');
+    const usd = (x) => (Number.isFinite(x) ? `$${x.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '–');
+    const cls = (x) => (x > 0 ? 'pos' : x < 0 ? 'neg' : '');
+    const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const ago = (ms) => { const m = Math.round(ms / 60000); return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`; };
+    const tokenLink = (symbol, mint) => (isAddr(mint) ? `<a href="https://dexscreener.com/solana/${mint}" target="_blank" rel="noopener">${esc(symbol)}</a>` : esc(symbol));
+
+    // ---------- modes ----------
+    let mode = 'browser';
+    let desk = null;
+    const sessionLog = [];
+
+    function loadSettings() {
+      try { return JSON.parse(storage.get(SETTINGS_KEY) || '{}'); } catch { return {}; }
+    }
+    function parseWallets(text = '') {
+      return text.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => { const [address, ...rest] = l.split(/\s+/); return { address, label: rest.join(' ') || undefined }; });
+    }
+    function deskConfig(s) {
+      return {
+        paper: { startingSol: Number(s.bankroll) > 0 ? Number(s.bankroll) : 10 },
+        rpc: s.rpcUrl ? { url: s.rpcUrl, minIntervalMs: 120, txMinIntervalMs: 250 } : {},
+        smartWallets: { wallets: parseWallets(s.wallets) },
+      };
+    }
+    const browserStore = {
+      load: async () => { try { return JSON.parse(storage.get(STATE_KEY) || 'null'); } catch { return null; } },
+      save: async (state) => { storage.set(STATE_KEY, JSON.stringify(state)); },
+    };
+
+    async function buildBrowserDesk({ fresh = false } = {}) {
+      const s = loadSettings();
+      desk = new Desk({ config: deskConfig(s), store: browserStore, sinks: [(e) => { sessionLog.push(e); if (sessionLog.length > 20000) sessionLog.splice(0, 5000); }] });
+      await desk.init({ fresh });
+      if (fresh) await desk.save();
+      return desk;
+    }
+
+    async function snapshot() {
+      if (mode === 'viewer') {
+        const r = await fetch('api/snapshot', { cache: 'no-store' });
+        if (!r.ok) throw new Error(`runner answered ${r.status}`);
+        return r.json();
+      }
+      return desk ? desk.snapshot() : null;
+    }
+
+    // ---------- wake lock (keeps a laptop/phone screen awake while the browser desk runs) ----------
+    let wakeLock = null;
+    async function holdWakeLock(on) {
+      try {
+        if (on && 'wakeLock' in navigator && !wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => { wakeLock = null; });
+        } else if (!on && wakeLock) {
+          await wakeLock.release();
+        }
+      } catch { /* not supported or denied */ }
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && desk?.running) holdWakeLock(true); });
+
+    // ---------- rendering ----------
+    const AGENT_INFO = [
+      ['scout', 'Scout'], ['filter', 'Filter'], ['analyst', 'Analyst'], ['executor', 'Executor'], ['risk', 'Risk'], ['logger', 'Logger'],
+    ];
+
+    function render(s) {
+      if (!s) return;
+      const pf = s.portfolio;
+      const st = s.stats;
+      const live = s.running;
+      $('status').className = `pill${live ? ' live' : ''}`;
+      $('status').textContent = mode === 'viewer' ? (live ? 'Runner live' : 'Runner stopped') : live ? 'Running in this tab' : 'Stopped';
+      $('startBtn').textContent = live ? 'Stop' : 'Start';
+      $('startBtn').hidden = mode === 'viewer'; // the Node runner is started/stopped from its terminal
+      $('exportBtn').hidden = mode === 'viewer'; // its logs are already on disk
+
+      $('kEquity').textContent = sol(pf.equitySol);
+      $('kEquityUsd').textContent = s.solUsd ? `≈ ${usd(pf.equitySol * s.solUsd)} · SOL ${usd(s.solUsd)}` : '–';
+      $('kPnl').textContent = pct(pf.pnlPct, 2);
+      $('kPnl').className = `value ${cls(pf.pnlPct)}`;
+      $('kPnlSol').textContent = `${pf.pnlSol >= 0 ? '+' : ''}${pf.pnlSol.toFixed(4)} SOL vs ${pf.startingSol} start`;
+      $('kOpen').textContent = String(pf.open.length);
+      $('kCash').textContent = `cash ${sol(pf.cashSol)}`;
+      $('kTrades').textContent = String(pf.trades);
+      $('kWin').textContent = pf.winRatePct == null ? 'win rate –' : `win rate ${pf.winRatePct.toFixed(0)}% · realized ${pf.realizedSol >= 0 ? '+' : ''}${pf.realizedSol.toFixed(3)}`;
+      const lc = s.lastCycle;
+      $('kCycle').textContent = s.cycle ? `#${s.cycle}` : '–';
+      $('kScan').textContent = lc ? `${hhmm(lc.at)} · ${lc.scout?.inWindow ?? 0} in window · ${(lc.ms / 1000).toFixed(1)}s` : 'no scan yet';
+
+      const kills = st.kills || {};
+      const totalKills = Object.values(kills).reduce((a, b) => a + b, 0);
+      const r = s.rules || {};
+      const cards = {
+        scout: [lc?.scout?.inWindow ?? '–', lc ? `in window of ${lc.scout?.discovered} discovered · ${s.watchlist} watched` : 'waiting for first scan', r.scout],
+        filter: [kills.filter || 0, `killed · ${st.passes.filter} passed · ${s.cooling} cooling down`, 'mint/freeze, LP, liq, 1h vol, top 10, dev, bundles, +80%/1h'],
+        analyst: [st.passes.analyst, `scored 70+ · ${kills.analyst || 0} killed`, 'momentum, buyers, buy/sell, holders, liq/mcap, smart wallets'],
+        executor: [st.entries, `paper fills · ${kills.executor || 0} refused`, r.executor],
+        risk: [pf.open.length, `stops armed · ${st.exits} exits`, r.risk],
+        logger: [totalKills, `kills logged · ${st.cycles} cycles`, 'every handoff, kill, fill and exit'],
+      };
+      $('pipeline').innerHTML = AGENT_INFO.map(([key, name], i) => {
+        const [big, small, rule] = cards[key];
+        return `<div class="agent"><div class="n">0${i + 1}</div><div class="name">${name}</div><div class="big">${esc(big)}</div><div class="small">${esc(small)}</div><div class="rule">${esc(rule || '')}</div></div>`;
+      }).join('');
+
+      $('positions').innerHTML = pf.open.length
+        ? `<table><thead><tr><th>Token</th><th class="r">Size</th><th class="r">Entry (SOL)</th><th class="r">Now</th><th class="r">PnL</th><th class="r">Stop</th><th>Trail</th><th class="r">Score</th><th class="r">Held</th></tr></thead><tbody>${pf.open
+            .map((p) => `<tr><td class="sym">${tokenLink(p.symbol, p.mint)}</td><td class="r">${sol(p.sizeSol)}</td><td class="r">${tiny(p.entryPrice)}</td><td class="r">${tiny(p.lastPrice)}</td><td class="r ${cls(p.pnlPct)}">${pct(p.pnlPct)}</td><td class="r">${pct(((p.stopPrice - p.entryPrice) / p.entryPrice) * 100)}</td><td class="text">${p.trailActive ? `<span class="pos">on</span> · peak ${pct(((p.peakPrice - p.entryPrice) / p.entryPrice) * 100)}` : `at ${pct(((p.trailActivatePrice - p.entryPrice) / p.entryPrice) * 100, 0)}`}</td><td class="r">${esc(p.score)}</td><td class="r">${ago(s.now - p.openedAt)}</td></tr>`)
+            .join('')}</tbody></table>`
+        : `<div class="empty">No open positions. Nothing has cleared all six agents yet${s.running ? '; the desk keeps scanning.' : '.'}</div>`;
+
+      $('killCount').textContent = `${totalKills} total`;
+      $('kills').innerHTML = s.kills.length
+        ? s.kills.map((k) => `<div class="item"><div class="head"><span class="time">${hhmm(k.t)}</span><span class="sym">${tokenLink(k.symbol, k.mint)}</span><span class="badge ${esc(k.agent)}">${esc(k.agent)}</span>${k.score != null ? `<span class="score">score ${esc(k.score)}</span>` : ''}<span class="recheck">recheck ${esc(k.recheckIn)}</span></div><div class="why">${k.reasons.map((x) => esc(x.detail)).join(' · ')}</div></div>`).join('')
+        : '<div class="empty">No kills yet.</div>';
+
+      const lines = s.events.map(eventLine).filter(Boolean).slice(0, 120);
+      $('events').innerHTML = lines.length ? lines.join('') : '<div class="empty">Nothing yet.</div>';
+
+      $('closed').innerHTML = pf.closed.length
+        ? `<table><thead><tr><th>Token</th><th>Opened</th><th class="r">Size</th><th class="r">PnL</th><th class="r">PnL SOL</th><th class="r">Peak</th><th>Exit</th><th class="r">Held</th></tr></thead><tbody>${pf.closed
+            .map((t) => `<tr><td class="sym">${tokenLink(t.symbol, t.mint)}</td><td>${hhmm(t.openedAt)}</td><td class="r">${sol(t.sizeSol)}</td><td class="r ${cls(t.pnlPct)}">${pct(t.pnlPct)}</td><td class="r ${cls(t.pnlSol)}">${t.pnlSol >= 0 ? '+' : ''}${t.pnlSol.toFixed(4)}</td><td class="r">${pct(t.peakPct)}</td><td class="text">${esc(t.exitReason)}</td><td class="r">${ago(t.closedAt - t.openedAt)}</td></tr>`)
+            .join('')}</tbody></table>`
+        : '<div class="empty">No closed trades yet.</div>';
+
+      $('rules').innerHTML = AGENT_INFO.map(([key, name]) => `<dt>${name}</dt><dd>${esc(r[key] || '')}</dd>`).join('');
+    }
+
+    function eventLine(e) {
+      const t = `<span class="time">${hhmm(e.t)}</span>`;
+      const sym = (x) => `<span class="sym">${tokenLink(x.symbol, x.mint)}</span>`;
+      const item = (badge, cls, head, why = '') => `<div class="item"><div class="head">${t}<span class="badge ${cls}">${badge}</span>${head}</div>${why ? `<div class="why">${why}</div>` : ''}</div>`;
+      switch (e.type) {
+        case 'handoff':
+          if (e.from === 'filter') return item('filter → analyst', '', sym(e), `clean: top 10 ${esc(e.safety?.top10Pct)}% · dev ${esc(e.safety?.devPct ?? '?')}% · LP ${esc(e.safety?.lpLockedPct)}% locked · launch bundle ${esc(e.safety?.bundle?.pct ?? '?')}%`);
+          if (e.from === 'analyst') return item('analyst → executor', '', sym(e), `score ${esc(e.score)}: ${Object.entries(e.components || {}).map(([k, v]) => `${esc(k)} ${esc(v.score ?? '–')}`).join(' · ')}`);
+          if (e.from === 'executor') return item('executor → risk', '', sym(e), `ticket ${esc(e.sizeSol)} SOL (${esc(e.sizePctOfEquity)}% of equity), est. impact ${esc(e.impactPct)}%`);
+          if (e.from === 'risk') return item('risk → executor', '', sym(e), `stop armed at ${tiny(e.stopPrice)} SOL, trailing from ${tiny(e.trailActivatePrice)} SOL`);
+          return null;
+        case 'entry':
+          return item('entry', 'entry', sym(e), `${esc(e.sizeSol)} SOL at ${tiny(e.entryPrice)} SOL · score ${esc(e.score)} · stop ${tiny(e.stopPrice)}`);
+        case 'exit':
+          return item('exit', 'exit', `${sym(e)}<span class="${cls(e.pnlSol)}">${pct(e.pnlPct)}</span>`, `${esc(e.reason)} · ${e.pnlSol >= 0 ? '+' : ''}${esc(e.pnlSol)} SOL · held ${esc(e.holdMin)}m`);
+        case 'risk':
+          return item('risk', '', sym(e), e.event === 'trail_on' ? `trailing stop on at +${esc(e.gainPct)}%` : `no fresh quote for ${esc(e.minutes)}m`);
+        case 'cycle':
+          if (!e.filterKills && !e.analystKills && !e.entries) return null; // idle cycles: "Last scan" already shows liveness
+          return item(`cycle ${esc(e.cycle)}`, '', `<span class="score">${esc(e.candidates)} candidates · ${esc(e.filterKills)} filter kills · ${esc(e.analystKills)} analyst kills · ${esc(e.entries)} entries · ${(e.ms / 1000).toFixed(1)}s</span>`);
+        case 'error':
+          return item('error', 'error', `<span class="score">${esc(e.agent)}${e.symbol ? ` · ${esc(e.symbol)}` : ''}</span>`, esc(e.message).slice(0, 300));
+        case 'start':
+          return item('desk', '', '<span class="score">started</span>', `${e.resumed ? 'resumed' : 'new'} paper account · RPC ${esc(e.rpc)} · ${esc(e.smartWallets)} smart wallets`);
+        case 'stop':
+          return item('desk', '', '<span class="score">stopped</span>');
+        default:
+          return null;
+      }
+    }
+
+    function showBanner(html) {
+      $('banner').hidden = !html;
+      $('banner').innerHTML = html || '';
+    }
+
+    // ---------- controls ----------
+    $('startBtn').addEventListener('click', async () => {
+      if (mode !== 'browser') return;
+      if (desk?.running) {
+        $('startBtn').disabled = true;
+        await desk.stop();
+        holdWakeLock(false);
+        $('startBtn').disabled = false;
+      } else {
+        const s = loadSettings();
+        if (!s.rpcUrl) return openSettings('Add an RPC URL first: the public Solana RPC refuses requests from web pages.');
+        if (!desk) await buildBrowserDesk();
+        desk.start();
+        holdWakeLock(true);
+      }
+      render(await snapshot());
+    });
+
+    function openSettings(message) {
+      const s = loadSettings();
+      $('sRpc').value = s.rpcUrl || '';
+      $('sBankroll').value = s.bankroll || 10;
+      $('sWallets').value = s.wallets || '';
+      $('settingsMsg').hidden = !message;
+      $('settingsMsg').textContent = message || '';
+      $('settings').showModal();
+    }
+    $('settingsBtn').addEventListener('click', () => (mode === 'viewer' ? alert('This page is showing the desk running in Node. Change its settings in config.local.json and restart it.') : openSettings()));
+
+    $('settings').addEventListener('close', async () => {
+      if ($('settings').returnValue !== 'save') return;
+      const next = { rpcUrl: $('sRpc').value.trim(), bankroll: Number($('sBankroll').value) || 10, wallets: $('sWallets').value };
+      storage.set(SETTINGS_KEY, JSON.stringify(next));
+      const wasRunning = desk?.running;
+      if (wasRunning) await desk.stop();
+      await buildBrowserDesk();
+      if (wasRunning && next.rpcUrl) desk.start();
+      refresh();
+    });
+
+    $('resetBtn').addEventListener('click', async () => {
+      if (!confirm('Close the current paper account and start a new one with the configured bankroll? Trade history is erased.')) return;
+      if (desk?.running) await desk.stop();
+      holdWakeLock(false);
+      const s = { rpcUrl: $('sRpc').value.trim(), bankroll: Number($('sBankroll').value) || 10, wallets: $('sWallets').value };
+      storage.set(SETTINGS_KEY, JSON.stringify(s));
+      storage.del(STATE_KEY);
+      await buildBrowserDesk({ fresh: true });
+      $('settings').close('cancel');
+      refresh();
+    });
+
+    function download(name, text, type) {
+      const url = URL.createObjectURL(new Blob([text], { type }));
+      const a = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    const stamp = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+
+    $('reportBtn').addEventListener('click', async () => {
+      if (mode === 'viewer') {
+        const r = await fetch('api/report', { cache: 'no-store' });
+        return download(`desk-report-${stamp()}.md`, await r.text(), 'text/markdown');
+      }
+      if (!desk) return;
+      download(`desk-report-${stamp()}.md`, buildReport({ state: desk.state, cfg: desk.cfg, startedAt: desk.startedAt || desk.state.createdAt, recentKills: desk.recent.kills.slice().reverse() }), 'text/markdown');
+    });
+    $('exportBtn').addEventListener('click', () => download(`desk-log-${stamp()}.jsonl`, sessionLog.map((e) => JSON.stringify(e)).join('\n'), 'application/x-ndjson'));
+
+    // ---------- boot ----------
+    async function refresh() {
+      try {
+        render(await snapshot());
+        if (mode === 'viewer') showBanner('');
+      } catch (err) {
+        if (mode === 'viewer') showBanner(`<b>Lost contact with the runner.</b> ${esc(err.message)}. Is <code>node desk.mjs</code> still running?`);
+      }
+    }
+
+    async function boot() {
+      // Served by `node desk.mjs` (localhost) -> view that run. Anywhere else (GitHub Pages) -> run in this tab.
+      if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
+        try {
+          const r = await fetch('api/snapshot', { cache: 'no-store' });
+          if (r.ok && (await r.json()).runner) mode = 'viewer';
+        } catch { /* plain static server: run in the browser */ }
+      }
+      if (mode === 'browser') {
+        await buildBrowserDesk();
+        if (!loadSettings().rpcUrl) {
+          showBanner('<b>Paper desk, runs in this tab.</b> Add a Solana RPC URL in Settings to start (the public RPC blocks browsers). For unattended overnight runs use the Node runner: <code>node memecoin-desk/desk.mjs --hours 9</code>, see the README.');
+        } else {
+          showBanner('<b>Runs in this tab.</b> Keep it open and the computer awake; browsers pause hidden tabs. For unattended overnight runs use the Node runner (<code>node memecoin-desk/desk.mjs --hours 9</code>).');
+        }
+      }
+      await refresh();
+      setInterval(refresh, mode === 'viewer' ? 3000 : 2000);
+    }
+    boot();
+  </script>
+</body>
+</html>

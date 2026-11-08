@@ -1,0 +1,14 @@
+{
+  "name": "memecoin-desk",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Six-agent Solana memecoin paper-trading desk (Scout, Filter, Analyst, Executor, Risk, Logger).",
+  "type": "module",
+  "engines": { "node": ">=18.17" },
+  "scripts": {
+    "start": "node desk.mjs",
+    "overnight": "node desk.mjs --hours 10",
+    "report": "node desk.mjs --report",
+    "test": "node --test"
+  }
+}

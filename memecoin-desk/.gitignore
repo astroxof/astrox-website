@@ -1,0 +1,4 @@
+# Run output stays local: paper state, logs and personal settings.
+logs/
+state/
+config.local.json
